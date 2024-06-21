@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"fmt"
 	"strconv"
 	"unicode"
 )
@@ -66,6 +67,7 @@ func NewBoardFromFen(fen string) Board {
 			}
 		}
 		row++
+		col = 0
 	}
 
 	return newBoard
@@ -73,6 +75,39 @@ func NewBoardFromFen(fen string) Board {
 
 func (b Board) GetPieceAt(i, j int) *Piece {
 	return b.Data[i][j]
+}
+
+// Suppose is legal
+func (b *Board) MakeMovement(movement Movement) {
+	if movement.MovingPiece.Kind == Kind_Pawn { // Pawn movement
+		movement.MovingPiece.IsPawnFirstMovement = false
+
+		movement.MovingPiece.Position = NewPosition(movement.To.I, movement.To.J)
+		b.Data[movement.To.I][movement.To.J] = movement.MovingPiece
+		b.Data[movement.From.I][movement.From.J] = nil
+	} else if movement.IsQueenSideCastling != nil || movement.IsKingSideCastling != nil { // Castling movement
+		if *movement.IsQueenSideCastling {
+			b.CanQueenCastling[movement.MovingPiece.Color] = false
+
+			// TODO: Do not hardcode this
+			rookPiece := b.Data[7][0]
+			kingPiece := b.Data[7][4]
+
+			rookPiece.Position = NewPosition(7, 3)
+			b.Data[7][3] = rookPiece
+			b.Data[7][0] = nil
+
+			kingPiece.Position = NewPosition(7, 2)
+			b.Data[7][2] = kingPiece
+			b.Data[7][4] = nil
+
+		} else if *movement.IsKingSideCastling {
+			b.CanKingCastling[movement.MovingPiece.Color] = false
+		}
+	} else {
+	}
+
+	fmt.Println("Do a movement!")
 }
 
 // For future implementation
