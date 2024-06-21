@@ -40,14 +40,13 @@ func (b Board) GetPiecePseudoMovements(p *Piece) []Movement {
 						continue
 					}
 
-					movements = append(movements, NewMovement(
-						p,
-						pieceAt,
-						p.Position,
-						NewPosition(finalI, finalJ),
-						b.CanKingCastling[p.Color],
-						b.CanQueenCastling[p.Color],
-					))
+					movements = append(movements,
+						*NewMovement(p,
+							p.Position,
+							NewPosition(finalI, finalJ),
+							b.CanKingCastling[p.Color],
+							b.CanQueenCastling[p.Color],
+						).WithTakingPiece(pieceAt))
 				}
 			}
 		}
@@ -65,15 +64,13 @@ func (b Board) GetPiecePseudoMovements(p *Piece) []Movement {
 			}
 
 			if canCastle {
-				movements = append(movements, NewCastlingMovement(
-					p,
-					p.Position,
-					NewPosition(p.Position.I, p.Position.J+jDelta*2),
-					b.CanKingCastling[p.Color],
-					b.CanQueenCastling[p.Color],
-					jDelta == 1,  // King side castling
-					jDelta == -1, // Queen side castling
-				))
+				movements = append(movements,
+					*NewMovement(p,
+						p.Position,
+						NewPosition(p.Position.I, p.Position.J+jDelta*2),
+						b.CanKingCastling[p.Color],
+						b.CanQueenCastling[p.Color],
+					).WithCastling(jDelta == -1, jDelta == 1))
 			}
 		}
 
@@ -100,14 +97,13 @@ func (b Board) GetPiecePseudoMovements(p *Piece) []Movement {
 					continue
 				}
 
-				movements = append(movements, NewMovement(
-					p,
-					pieceAt,
-					p.Position,
-					NewPosition(finalI, finalJ),
-					b.CanKingCastling[p.Color],
-					b.CanQueenCastling[p.Color],
-				))
+				movements = append(movements,
+					*NewMovement(p,
+						p.Position,
+						NewPosition(finalI, finalJ),
+						b.CanKingCastling[p.Color],
+						b.CanQueenCastling[p.Color],
+					).WithTakingPiece(pieceAt))
 			}
 		}
 
@@ -136,15 +132,13 @@ func (b Board) GetPiecePseudoMovements(p *Piece) []Movement {
 					break
 				}
 
-				movements = append(movements, NewPawnMovement(
-					p,
-					pieceAt,
-					p.Position,
-					NewPosition(finalI, p.Position.J),
-					b.CanKingCastling[p.Color],
-					b.CanQueenCastling[p.Color],
-					p.IsPawnFirstMovement,
-				))
+				movements = append(movements,
+					*NewMovement(p,
+						p.Position,
+						NewPosition(finalI, p.Position.J),
+						b.CanKingCastling[p.Color],
+						b.CanQueenCastling[p.Color],
+					).WithTakingPiece(pieceAt).WithPawn(p.IsPawnFirstMovement))
 			}
 		}
 
@@ -155,15 +149,14 @@ func (b Board) GetPiecePseudoMovements(p *Piece) []Movement {
 			if finalI >= 0 && finalJ >= 0 && finalI < 8 && finalJ < 8 {
 				pieceAt := b.GetPieceAt(finalI, finalJ)
 				if pieceAt != nil && pieceAt.Color != p.Color {
-					movements = append(movements, NewPawnMovement(
-						p,
-						pieceAt,
-						p.Position,
-						NewPosition(finalI, finalJ),
-						b.CanKingCastling[p.Color],
-						b.CanQueenCastling[p.Color],
-						p.IsPawnFirstMovement,
-					))
+
+					movements = append(movements,
+						*NewMovement(p,
+							p.Position,
+							NewPosition(finalI, p.Position.J),
+							b.CanKingCastling[p.Color],
+							b.CanQueenCastling[p.Color],
+						).WithTakingPiece(pieceAt).WithPawn(p.IsPawnFirstMovement))
 				}
 			}
 		}
@@ -185,24 +178,22 @@ func (b Board) getOrthogonalPseudoMovements(p *Piece) []Movement {
 			pieceAt := b.GetPieceAt(i, j)
 
 			if pieceAt == nil {
-				movements = append(movements, NewMovement(
-					p,
-					nil,
-					p.Position,
-					NewPosition(i, j),
-					b.CanKingCastling[p.Color],
-					b.CanQueenCastling[p.Color],
-				))
-			} else {
-				if pieceAt.Color != b.PlayerToMove {
-					movements = append(movements, NewMovement(
-						p,
-						pieceAt,
+				movements = append(movements,
+					*NewMovement(p,
 						p.Position,
 						NewPosition(i, j),
 						b.CanKingCastling[p.Color],
 						b.CanQueenCastling[p.Color],
-					))
+					).WithTakingPiece(pieceAt))
+			} else {
+				if pieceAt.Color != b.PlayerToMove {
+					movements = append(movements,
+						*NewMovement(p,
+							p.Position,
+							NewPosition(i, j),
+							b.CanKingCastling[p.Color],
+							b.CanQueenCastling[p.Color],
+						).WithTakingPiece(pieceAt))
 				}
 
 				break
@@ -223,24 +214,22 @@ func (b Board) getDiagonalPseudoMovements(p *Piece) []Movement {
 			pieceAt := b.GetPieceAt(i, j)
 
 			if pieceAt == nil {
-				movements = append(movements, NewMovement(
-					p,
-					nil,
-					p.Position,
-					NewPosition(i, j),
-					b.CanKingCastling[p.Color],
-					b.CanQueenCastling[p.Color],
-				))
-			} else {
-				if pieceAt.Color != b.PlayerToMove {
-					movements = append(movements, NewMovement(
-						p,
-						pieceAt,
+				movements = append(movements,
+					*NewMovement(p,
 						p.Position,
 						NewPosition(i, j),
 						b.CanKingCastling[p.Color],
 						b.CanQueenCastling[p.Color],
-					))
+					).WithTakingPiece(pieceAt))
+			} else {
+				if pieceAt.Color != b.PlayerToMove {
+					movements = append(movements,
+						*NewMovement(p,
+							p.Position,
+							NewPosition(i, j),
+							b.CanKingCastling[p.Color],
+							b.CanQueenCastling[p.Color],
+						).WithTakingPiece(pieceAt))
 				}
 
 				break

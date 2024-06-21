@@ -19,26 +19,29 @@ type Movement struct {
 	// TODO: To later UNDO a Movement, might be necessary to add more parameters (such as Castling abilities)
 }
 
-func NewMovement(movingPiece, takingPiece *Piece, from, to Position, canKingSideCastling, canQueenSideCastling bool) Movement {
-	return Movement{
-		MovingPiece:          movingPiece,
-		TakingPiece:          takingPiece,
-		From:                 from,
-		To:                   to,
-		CanKingSideCastling:  canKingSideCastling,
+func (m *Movement) WithTakingPiece(piece *Piece) *Movement {
+	m.TakingPiece = piece
+	return m
+}
+
+func (m *Movement) WithPawn(isFirstMove bool) *Movement {
+	m.PawnIsFirstMove = &isFirstMove
+	return m
+}
+
+func (m *Movement) WithCastling(isQueenSideMove, isKingSideMove bool) *Movement {
+	m.IsKingSideCastling = &isKingSideMove
+	m.IsQueenSideCastling = &isQueenSideMove
+	return m
+}
+
+func NewMovement(movingPiece *Piece, from, to Position, canQueenSideCastling, canKingSideCastling bool) *Movement {
+	return &Movement{
+		MovingPiece: movingPiece,
+		From:        from,
+		To:          to,
+
 		CanQueenSideCastling: canQueenSideCastling,
+		CanKingSideCastling:  canKingSideCastling,
 	}
-}
-
-func NewPawnMovement(movingPiece, takingPiece *Piece, from, to Position, canKingSideCastling, canQueenSideCastling, pawnIsFirstMove bool) Movement {
-	newMovement := NewMovement(movingPiece, takingPiece, from, to, canKingSideCastling, canQueenSideCastling)
-	newMovement.PawnIsFirstMove = &pawnIsFirstMove
-	return newMovement
-}
-
-func NewCastlingMovement(movingPiece *Piece, from, to Position, canKingSideCastling, canQueenSideCastling, isKingSideCastling, isQueenSideCastling bool) Movement {
-	newMovement := NewMovement(movingPiece, nil, from, to, canKingSideCastling, canQueenSideCastling)
-	newMovement.IsKingSideCastling = &isKingSideCastling
-	newMovement.IsQueenSideCastling = &isQueenSideCastling
-	return newMovement
 }
