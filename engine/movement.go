@@ -4,6 +4,9 @@ type Movement struct {
 	MovingPiece *Piece
 	TakingPiece *Piece // Optional
 
+	MovingPieceCopy Piece
+	TakingPieceCopy *Piece
+
 	From Position
 	To   Position
 
@@ -20,7 +23,13 @@ type Movement struct {
 }
 
 func (m *Movement) WithTakingPiece(piece *Piece) *Movement {
+	if piece == nil {
+		return m
+	}
+
 	m.TakingPiece = piece
+	takingPieceCopy := piece.DeepCopy()
+	m.TakingPieceCopy = &takingPieceCopy
 	return m
 }
 
@@ -37,9 +46,10 @@ func (m *Movement) WithCastling(isQueenSideMove, isKingSideMove bool) *Movement 
 
 func NewMovement(movingPiece *Piece, from, to Position, canQueenSideCastling, canKingSideCastling bool) *Movement {
 	return &Movement{
-		MovingPiece: movingPiece,
-		From:        from,
-		To:          to,
+		MovingPiece:     movingPiece,
+		MovingPieceCopy: movingPiece.DeepCopy(),
+		From:            from,
+		To:              to,
 
 		CanQueenSideCastling: canQueenSideCastling,
 		CanKingSideCastling:  canKingSideCastling,

@@ -1,5 +1,11 @@
 package engine
 
+func (b Board) GetLegalMovements() []Movement {
+	//pseudoMovements := b.GetPseudoMovements()
+	panic("TODO")
+	return []Movement{}
+}
+
 func (b Board) GetPseudoMovements() []Movement {
 	movements := []Movement{}
 
@@ -149,11 +155,10 @@ func (b Board) GetPiecePseudoMovements(p *Piece) []Movement {
 			if finalI >= 0 && finalJ >= 0 && finalI < 8 && finalJ < 8 {
 				pieceAt := b.GetPieceAt(finalI, finalJ)
 				if pieceAt != nil && pieceAt.Color != p.Color {
-
 					movements = append(movements,
 						*NewMovement(p,
 							p.Position,
-							NewPosition(finalI, p.Position.J),
+							NewPosition(finalI, finalJ),
 							b.CanKingCastling[p.Color],
 							b.CanQueenCastling[p.Color],
 						).WithTakingPiece(pieceAt).WithPawn(p.IsPawnFirstMovement))

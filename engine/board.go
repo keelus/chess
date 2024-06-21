@@ -1,7 +1,6 @@
 package engine
 
 import (
-	"fmt"
 	"strconv"
 	"unicode"
 )
@@ -57,8 +56,7 @@ func NewBoardFromFen(fen string) Board {
 				col += colsToJump - 1 // Subtract current
 			} else {
 				kind, color := KindAndColorFromRune(colData)
-				newPiece := NewPiece(color, kind, NewPosition(row, col))
-				newBoard.Data[row][col] = &newPiece
+				newBoard.CreatePieceAt(color, kind, row, col)
 			}
 
 			col++
@@ -73,22 +71,21 @@ func NewBoardFromFen(fen string) Board {
 	return newBoard
 }
 
+func (b *Board) CreatePieceAt(color Color, kind Kind, i, j int) {
+	newPiece := NewPiece(color, kind, NewPosition(i, j))
+	b.Data[i][j] = &newPiece
+}
+
 func (b Board) GetPieceAt(i, j int) *Piece {
 	return b.Data[i][j]
 }
 
 // Suppose is legal
 func (b *Board) MakeMovement(movement Movement) {
-	if movement.MovingPiece.Kind == Kind_Pawn { // Pawn movement
-		movement.MovingPiece.IsPawnFirstMovement = false
-
-		movement.MovingPiece.Position = NewPosition(movement.To.I, movement.To.J)
-		b.Data[movement.To.I][movement.To.J] = movement.MovingPiece
-		b.Data[movement.From.I][movement.From.J] = nil
-	} else if movement.IsQueenSideCastling != nil || movement.IsKingSideCastling != nil { // Castling movement
+	if movement.IsQueenSideCastling != nil || movement.IsKingSideCastling != nil { // Handle castling
+		b.CanQueenCastling[movement.MovingPiece.Color] = false
+		b.CanKingCastling[movement.MovingPiece.Color] = false
 		if *movement.IsQueenSideCastling {
-			b.CanQueenCastling[movement.MovingPiece.Color] = false
-
 			// TODO: Do not hardcode this
 			rookPiece := b.Data[7][0]
 			kingPiece := b.Data[7][4]
@@ -100,14 +97,32 @@ func (b *Board) MakeMovement(movement Movement) {
 			kingPiece.Position = NewPosition(7, 2)
 			b.Data[7][2] = kingPiece
 			b.Data[7][4] = nil
-
 		} else if *movement.IsKingSideCastling {
-			b.CanKingCastling[movement.MovingPiece.Color] = false
+			// TODO: Do not hardcode this
+			rookPiece := b.Data[7][7]
+			kingPiece := b.Data[7][4]
+
+			rookPiece.Position = NewPosition(7, 5)
+			b.Data[7][5] = rookPiece
+			b.Data[7][7] = nil
+
+			kingPiece.Position = NewPosition(7, 6)
+			b.Data[7][6] = kingPiece
+			b.Data[7][4] = nil
+
 		}
 	} else {
-	}
+		if movement.MovingPiece.Kind == Kind_Pawn {
+			movement.MovingPiece.IsPawnFirstMovement = false
+		}
 
-	fmt.Println("Do a movement!")
+		movement.MovingPiece.Position = NewPosition(movement.To.I, movement.To.J)
+		b.Data[movement.To.I][movement.To.J] = movement.MovingPiece
+		b.Data[movement.From.I][movement.From.J] = nil
+	}
+}
+
+func (b *Board) UndoMovement(movement Movement) {
 }
 
 // For future implementation

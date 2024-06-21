@@ -30,16 +30,32 @@ func init() {
 
 func main() {
 	//board := engine.NewBoardFromFen("8/3p4/2P1P3/8/8/8/8/8 b KQkq - 0 1")
-	board := engine.NewBoardFromFen("8/p7/8/8/8/8/8/R3K2R w KQkq - 0 1")
+	board := engine.NewBoardFromFen("8/p7/8/3p3/4P6/8/8/R3K2R w KQkq - 0 1")
 
 	var activePiece *engine.Piece = nil
 
 	for !rl.WindowShouldClose() {
+		currentMovements := board.GetPseudoMovements()
+		//currentMovements := board.GetLegalMovements()
+
 		if rl.IsMouseButtonPressed(rl.MouseButtonLeft) {
 			i := int(math.Floor(float64(rl.GetMousePosition().Y) / float64(CELL_SIZE)))
 			j := int(math.Floor(float64(rl.GetMousePosition().X) / float64(CELL_SIZE)))
 
-			if i >= 0 && j >= 0 && i < 8 && j < 8 {
+			clickedAMovement := false
+			if activePiece != nil {
+				for _, movement := range currentMovements {
+					if movement.MovingPiece == activePiece {
+						if movement.To.I == i && movement.To.J == j {
+							clickedAMovement = true
+							board.MakeMovement(movement)
+							activePiece = nil
+						}
+					}
+				}
+			}
+
+			if !clickedAMovement && i >= 0 && j >= 0 && i < 8 && j < 8 {
 				activePiece = board.GetPieceAt(i, j)
 			}
 		}
@@ -72,8 +88,9 @@ func main() {
 		if activePiece != nil {
 			totalMovements := 0
 
-			for _, m := range board.GetPseudoMovements() {
+			for _, m := range currentMovements {
 				if m.MovingPiece == activePiece {
+					//fmt.Println(m)
 					totalMovements++
 
 					cellColor := rl.NewColor(209, 121, 27, 127)

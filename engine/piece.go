@@ -19,3 +19,7 @@ func NewPiece(color Color, kind Kind, pos Position) Piece {
 		Position: pos,
 	}
 }
+
+func (p Piece) DeepCopy() Piece {
+	return NewPiece(p.Color, p.Kind, NewPosition(p.Position.I, p.Position.J))
+}
