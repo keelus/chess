@@ -1,9 +1,5 @@
 package engine
 
-import (
-	"fmt"
-)
-
 func (b Board) GetPseudoMovements() []Movement {
 	movements := []Movement{}
 
@@ -49,10 +45,44 @@ func (b Board) GetPiecePseudoMovements(p *Piece) []Movement {
 						pieceAt,
 						p.Position,
 						NewPosition(finalI, finalJ),
-						false,
+						b.CanKingCastling[p.Color],
+						b.CanQueenCastling[p.Color],
 					))
 				}
 			}
+		}
+
+		// TODO: Black
+
+		handleCastling := func(jDelta, jStop int) {
+			// Check if space to rook is empty
+			canCastle := true
+			for j := p.Position.J + jDelta; j != jStop; j += jDelta {
+				if b.GetPieceAt(p.Position.I, j) != nil {
+					canCastle = false
+					break
+				}
+			}
+
+			if canCastle {
+				movements = append(movements, NewCastlingMovement(
+					p,
+					p.Position,
+					NewPosition(p.Position.I, p.Position.J+jDelta*2),
+					b.CanKingCastling[p.Color],
+					b.CanQueenCastling[p.Color],
+					jDelta == 1,  // King side castling
+					jDelta == -1, // Queen side castling
+				))
+			}
+		}
+
+		if b.CanQueenCastling[p.Color] {
+			handleCastling(-1, 1)
+		}
+
+		if b.CanKingCastling[p.Color] {
+			handleCastling(1, 7)
 		}
 
 		return movements
@@ -75,7 +105,8 @@ func (b Board) GetPiecePseudoMovements(p *Piece) []Movement {
 					pieceAt,
 					p.Position,
 					NewPosition(finalI, finalJ),
-					false,
+					b.CanKingCastling[p.Color],
+					b.CanQueenCastling[p.Color],
 				))
 			}
 		}
@@ -105,11 +136,13 @@ func (b Board) GetPiecePseudoMovements(p *Piece) []Movement {
 					break
 				}
 
-				movements = append(movements, NewMovement(
+				movements = append(movements, NewPawnMovement(
 					p,
 					pieceAt,
 					p.Position,
 					NewPosition(finalI, p.Position.J),
+					b.CanKingCastling[p.Color],
+					b.CanQueenCastling[p.Color],
 					p.IsPawnFirstMovement,
 				))
 			}
@@ -122,12 +155,14 @@ func (b Board) GetPiecePseudoMovements(p *Piece) []Movement {
 			if finalI >= 0 && finalJ >= 0 && finalI < 8 && finalJ < 8 {
 				pieceAt := b.GetPieceAt(finalI, finalJ)
 				if pieceAt != nil && pieceAt.Color != p.Color {
-					movements = append(movements, NewMovement(
+					movements = append(movements, NewPawnMovement(
 						p,
 						pieceAt,
 						p.Position,
 						NewPosition(finalI, finalJ),
-						false,
+						b.CanKingCastling[p.Color],
+						b.CanQueenCastling[p.Color],
+						p.IsPawnFirstMovement,
 					))
 				}
 			}
@@ -147,7 +182,6 @@ func (b Board) getOrthogonalPseudoMovements(p *Piece) []Movement {
 
 	for _, dir := range dirs {
 		for i, j := p.Position.I+dir[0], p.Position.J+dir[1]; i >= 0 && j >= 0 && i < 8 && j < 8; i, j = i+dir[0], j+dir[1] {
-			fmt.Println(i, j)
 			pieceAt := b.GetPieceAt(i, j)
 
 			if pieceAt == nil {
@@ -156,7 +190,8 @@ func (b Board) getOrthogonalPseudoMovements(p *Piece) []Movement {
 					nil,
 					p.Position,
 					NewPosition(i, j),
-					false,
+					b.CanKingCastling[p.Color],
+					b.CanQueenCastling[p.Color],
 				))
 			} else {
 				if pieceAt.Color != b.PlayerToMove {
@@ -165,7 +200,8 @@ func (b Board) getOrthogonalPseudoMovements(p *Piece) []Movement {
 						pieceAt,
 						p.Position,
 						NewPosition(i, j),
-						false,
+						b.CanKingCastling[p.Color],
+						b.CanQueenCastling[p.Color],
 					))
 				}
 
@@ -184,7 +220,6 @@ func (b Board) getDiagonalPseudoMovements(p *Piece) []Movement {
 
 	for _, dir := range dirs {
 		for i, j := p.Position.I+dir[0], p.Position.J+dir[1]; i >= 0 && j >= 0 && i < 8 && j < 8; i, j = i+dir[0], j+dir[1] {
-			fmt.Println(i, j)
 			pieceAt := b.GetPieceAt(i, j)
 
 			if pieceAt == nil {
@@ -193,7 +228,8 @@ func (b Board) getDiagonalPseudoMovements(p *Piece) []Movement {
 					nil,
 					p.Position,
 					NewPosition(i, j),
-					false,
+					b.CanKingCastling[p.Color],
+					b.CanQueenCastling[p.Color],
 				))
 			} else {
 				if pieceAt.Color != b.PlayerToMove {
@@ -202,7 +238,8 @@ func (b Board) getDiagonalPseudoMovements(p *Piece) []Movement {
 						pieceAt,
 						p.Position,
 						NewPosition(i, j),
-						false,
+						b.CanKingCastling[p.Color],
+						b.CanQueenCastling[p.Color],
 					))
 				}
 

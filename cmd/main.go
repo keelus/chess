@@ -29,7 +29,8 @@ func init() {
 }
 
 func main() {
-	board := engine.NewBoardFromFen("8/3p4/2P1P3/8/8/8/8/8 b KQkq - 0 1")
+	//board := engine.NewBoardFromFen("8/3p4/2P1P3/8/8/8/8/8 b KQkq - 0 1")
+	board := engine.NewBoardFromFen("8/8/8/8/8/8/8/R3K2R w KQkq - 0 1")
 
 	var activePiece *engine.Piece = nil
 
@@ -73,6 +74,7 @@ func main() {
 
 			for _, m := range board.GetPseudoMovements() {
 				if m.MovingPiece == activePiece {
+					fmt.Println(m)
 					totalMovements++
 					rl.DrawRectangle(int32(m.To.J)*CELL_SIZE, int32(m.To.I)*CELL_SIZE, CELL_SIZE, CELL_SIZE, rl.NewColor(209, 121, 27, 255))
 				}

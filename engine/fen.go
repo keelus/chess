@@ -10,6 +10,11 @@ type FenData struct {
 	PlacementData [8]string
 	ActiveColor   Color
 	Fullmoves     int
+
+	WhiteCanKingSideCastling  bool
+	WhiteCanQueenSideCastling bool
+	BlackCanKingSideCastling  bool
+	BlackCanQueenSideCastling bool
 }
 
 func parseFen(fen string) (FenData, error) {
@@ -28,7 +33,27 @@ func parseFen(fen string) (FenData, error) {
 		return FenData{}, errors.New("The provided FEN does not have a valid active color.")
 	}
 
-	// TODO: Castling (parts[2])
+	whiteCanKingSideCastling := false
+	whiteCanQueenSideCastling := false
+	blackCanKingSideCastling := false
+	blackCanQueenSideCastling := false
+
+	if parts[2] != "-" {
+		if strings.Contains(parts[2], "K") {
+			whiteCanKingSideCastling = true
+		}
+		if strings.Contains(parts[2], "Q") {
+			whiteCanQueenSideCastling = true
+		}
+
+		if strings.Contains(parts[2], "k") {
+			blackCanKingSideCastling = true
+		}
+		if strings.Contains(parts[2], "q") {
+			blackCanQueenSideCastling = true
+		}
+	}
+
 	// TODO: En passant (parts[3])
 	// TODO: Halfmove clock (parts[4])
 
@@ -41,5 +66,10 @@ func parseFen(fen string) (FenData, error) {
 		PlacementData: [8]string(lacementParts),
 		ActiveColor:   ColorFromRune(activeColor),
 		Fullmoves:     int(fullmoves),
+
+		WhiteCanKingSideCastling:  whiteCanKingSideCastling,
+		WhiteCanQueenSideCastling: whiteCanQueenSideCastling,
+		BlackCanKingSideCastling:  blackCanKingSideCastling,
+		BlackCanQueenSideCastling: blackCanQueenSideCastling,
 	}, nil
 }

@@ -9,11 +9,17 @@ type Board struct {
 	Data [8][8]*Piece
 
 	PlayerToMove Color
+
+	CanKingCastling  map[Color]bool
+	CanQueenCastling map[Color]bool
 }
 
 func NewEmptyBoard() Board {
 	return Board{
 		PlayerToMove: Color_White,
+
+		CanKingCastling:  map[Color]bool{Color_White: true, Color_Black: true},
+		CanQueenCastling: map[Color]bool{Color_White: true, Color_Black: true},
 	}
 }
 
@@ -32,6 +38,15 @@ func NewBoardFromFen(fen string) Board {
 
 	newBoard := Board{
 		PlayerToMove: parsedFen.ActiveColor,
+
+		CanKingCastling: map[Color]bool{
+			Color_White: parsedFen.WhiteCanKingSideCastling,
+			Color_Black: parsedFen.BlackCanKingSideCastling,
+		},
+		CanQueenCastling: map[Color]bool{
+			Color_White: parsedFen.WhiteCanQueenSideCastling,
+			Color_Black: parsedFen.BlackCanQueenSideCastling,
+		},
 	}
 
 	for _, rowData := range parsedFen.PlacementData {
