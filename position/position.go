@@ -1,13 +1,13 @@
 package position
 
 type Position struct {
-	X int
-	Y int
+	I int
+	J int
 }
 
-func NewPosition(x, y int) Position {
+func NewPosition(i, j int) Position {
 	return Position{
-		X: x,
-		Y: y,
+		I: i,
+		J: j,
 	}
 }

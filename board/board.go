@@ -2,6 +2,7 @@ package board
 
 import (
 	"chess/piece"
+	"chess/position"
 	"strconv"
 	"unicode"
 )
@@ -16,6 +17,10 @@ func NewEmptyBoard() Board {
 	return Board{
 		PlayerToMove: piece.Color_White,
 	}
+}
+
+func NewStartingBoard() Board {
+	return NewBoardFromFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
 }
 
 func NewBoardFromFen(fen string) Board {
@@ -38,7 +43,7 @@ func NewBoardFromFen(fen string) Board {
 				col += colsToJump - 1 // Subtract current
 			} else {
 				kind, color := piece.KindAndColorFromRune(colData)
-				newPiece := piece.NewPiece(color, kind)
+				newPiece := piece.NewPiece(color, kind, position.NewPosition(row, col))
 				newBoard.Data[row][col] = &newPiece
 			}
 
@@ -51,6 +56,10 @@ func NewBoardFromFen(fen string) Board {
 	}
 
 	return newBoard
+}
+
+func (b Board) GetPieceAt(i, j int) *piece.Piece {
+	return b.Data[i][j]
 }
 
 // For future implementation

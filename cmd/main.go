@@ -2,7 +2,10 @@ package main
 
 import (
 	"chess/board"
+	"chess/piece"
 	"chess/textures"
+	"fmt"
+	"math"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
@@ -28,8 +31,20 @@ func init() {
 }
 
 func main() {
-	currentBoard := board.NewBoardFromFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+	currentBoard := board.NewBoardFromFen("8/8/2p1p3/3P4/8/8/8/8 w KQkq - 0 1")
+
+	var activePiece *piece.Piece = nil
+
 	for !rl.WindowShouldClose() {
+		if rl.IsMouseButtonPressed(rl.MouseButtonLeft) {
+			i := int(math.Floor(float64(rl.GetMousePosition().Y) / float64(CELL_SIZE)))
+			j := int(math.Floor(float64(rl.GetMousePosition().X) / float64(CELL_SIZE)))
+
+			if i >= 0 && j >= 0 && i < 8 && j < 8 {
+				activePiece = currentBoard.GetPieceAt(i, j)
+			}
+		}
+
 		rl.BeginDrawing()
 		rl.ClearBackground(rl.RayWhite)
 
@@ -53,6 +68,19 @@ func main() {
 					rl.DrawTexture(textures.GetPieceTexture(currentPiece.Color, currentPiece.Kind), j*CELL_SIZE, i*CELL_SIZE, rl.RayWhite)
 				}
 			}
+		}
+
+		if activePiece != nil {
+			totalMovements := 0
+
+			for _, m := range currentBoard.GetPseudoMovements() {
+				if m.MovingPiece == activePiece {
+					totalMovements++
+					rl.DrawRectangle(int32(m.To.J)*CELL_SIZE, int32(m.To.I)*CELL_SIZE, CELL_SIZE, CELL_SIZE, rl.NewColor(209, 121, 27, 255))
+				}
+			}
+
+			fmt.Printf("This piece has %d movements available.\n", totalMovements)
 		}
 
 		rl.EndDrawing()
