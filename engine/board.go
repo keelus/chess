@@ -1,21 +1,19 @@
-package board
+package engine
 
 import (
-	"chess/piece"
-	"chess/position"
 	"strconv"
 	"unicode"
 )
 
 type Board struct {
-	Data [8][8]*piece.Piece
+	Data [8][8]*Piece
 
-	PlayerToMove piece.Color
+	PlayerToMove Color
 }
 
 func NewEmptyBoard() Board {
 	return Board{
-		PlayerToMove: piece.Color_White,
+		PlayerToMove: Color_White,
 	}
 }
 
@@ -42,8 +40,8 @@ func NewBoardFromFen(fen string) Board {
 				colsToJump, _ := strconv.Atoi(string(colData))
 				col += colsToJump - 1 // Subtract current
 			} else {
-				kind, color := piece.KindAndColorFromRune(colData)
-				newPiece := piece.NewPiece(color, kind, position.NewPosition(row, col))
+				kind, color := KindAndColorFromRune(colData)
+				newPiece := NewPiece(color, kind, NewPosition(row, col))
 				newBoard.Data[row][col] = &newPiece
 			}
 
@@ -58,7 +56,7 @@ func NewBoardFromFen(fen string) Board {
 	return newBoard
 }
 
-func (b Board) GetPieceAt(i, j int) *piece.Piece {
+func (b Board) GetPieceAt(i, j int) *Piece {
 	return b.Data[i][j]
 }
 

@@ -1,7 +1,6 @@
-package board
+package engine
 
 import (
-	"chess/piece"
 	"errors"
 	"strconv"
 	"strings"
@@ -9,7 +8,7 @@ import (
 
 type FenData struct {
 	PlacementData [8]string
-	ActiveColor   piece.Color
+	ActiveColor   Color
 	Fullmoves     int
 }
 
@@ -19,8 +18,8 @@ func parseFen(fen string) (FenData, error) {
 		return FenData{}, errors.New("The provided FEN does not have 6 parts.")
 	}
 
-	piecePlacementParts := strings.Split(parts[0], "/")
-	if len(piecePlacementParts) != 8 {
+	lacementParts := strings.Split(parts[0], "/")
+	if len(lacementParts) != 8 {
 		return FenData{}, errors.New("The provided FEN does not have 8 placement positions in part 1.")
 	}
 
@@ -39,8 +38,8 @@ func parseFen(fen string) (FenData, error) {
 	}
 
 	return FenData{
-		PlacementData: [8]string(piecePlacementParts),
-		ActiveColor:   piece.ColorFromRune(activeColor),
+		PlacementData: [8]string(lacementParts),
+		ActiveColor:   ColorFromRune(activeColor),
 		Fullmoves:     int(fullmoves),
 	}, nil
 }

@@ -1,8 +1,4 @@
-package piece
-
-import (
-	"chess/position"
-)
+package engine
 
 type Piece struct {
 	Color Color
@@ -10,10 +6,10 @@ type Piece struct {
 
 	IsPawnFirstMovement bool
 
-	Position position.Position
+	Position Position
 }
 
-func NewPiece(color Color, kind Kind, pos position.Position) Piece {
+func NewPiece(color Color, kind Kind, pos Position) Piece {
 	return Piece{
 		Color: color,
 		Kind:  kind,

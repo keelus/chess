@@ -1,4 +1,4 @@
-package piece
+package engine
 
 const COLOR_AMOUNT = 2
 

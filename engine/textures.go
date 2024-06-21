@@ -1,13 +1,12 @@
-package textures
+package engine
 
 import (
-	"chess/piece"
 	"fmt"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
-var loadedTextures map[piece.Color]map[piece.Kind]rl.Texture2D
+var loadedTextures map[Color]map[Kind]rl.Texture2D
 
 const CELL_SIZE int32 = 100
 
@@ -21,14 +20,14 @@ func loadPieceTexture(filename string) rl.Texture2D {
 }
 
 func LoadTextures() {
-	loadedTextures = make(map[piece.Color]map[piece.Kind]rl.Texture2D)
+	loadedTextures = make(map[Color]map[Kind]rl.Texture2D)
 
-	for c := 0; c < piece.COLOR_AMOUNT; c++ {
-		castedColor := piece.Color(c)
-		loadedTextures[castedColor] = make(map[piece.Kind]rl.Texture2D)
+	for c := 0; c < COLOR_AMOUNT; c++ {
+		castedColor := Color(c)
+		loadedTextures[castedColor] = make(map[Kind]rl.Texture2D)
 
-		for k := 0; k < piece.KIND_AMOUNT; k++ {
-			castedKind := piece.Kind(k)
+		for k := 0; k < KIND_AMOUNT; k++ {
+			castedKind := Kind(k)
 
 			kindRune := castedKind.ToRune()
 			colorRune := castedColor.ToRune()
@@ -41,6 +40,6 @@ func LoadTextures() {
 	}
 }
 
-func GetPieceTexture(color piece.Color, kind piece.Kind) rl.Texture2D {
+func GetPieceTexture(color Color, kind Kind) rl.Texture2D {
 	return loadedTextures[color][kind]
 }

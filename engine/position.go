@@ -1,4 +1,4 @@
-package position
+package engine
 
 type Position struct {
 	I int

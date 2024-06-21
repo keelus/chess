@@ -1,14 +1,11 @@
-package board
+package engine
 
 import (
-	"chess/movement"
-	"chess/piece"
-	"chess/position"
 	"fmt"
 )
 
-func (b Board) GetPseudoMovements() []movement.Movement {
-	movements := []movement.Movement{}
+func (b Board) GetPseudoMovements() []Movement {
+	movements := []Movement{}
 
 	for _, row := range b.Data {
 		for _, p := range row {
@@ -21,17 +18,17 @@ func (b Board) GetPseudoMovements() []movement.Movement {
 	return movements
 }
 
-func (b Board) GetPiecePseudoMovements(p *piece.Piece) []movement.Movement {
+func (b Board) GetPiecePseudoMovements(p *Piece) []Movement {
 	switch p.Kind {
-	case piece.Kind_Bishop:
+	case Kind_Bishop:
 		return b.getDiagonalPseudoMovements(p)
-	case piece.Kind_Rook:
+	case Kind_Rook:
 		return b.getOrthogonalPseudoMovements(p)
-	case piece.Kind_Queen:
+	case Kind_Queen:
 		movements := b.getDiagonalPseudoMovements(p)
 		return append(movements, b.getOrthogonalPseudoMovements(p)...)
-	case piece.Kind_King:
-		movements := []movement.Movement{}
+	case Kind_King:
+		movements := []Movement{}
 		for i := -1; i < 2; i++ {
 			for j := -1; j < 2; j++ {
 				if i == 0 && j == 0 {
@@ -47,11 +44,11 @@ func (b Board) GetPiecePseudoMovements(p *piece.Piece) []movement.Movement {
 						continue
 					}
 
-					movements = append(movements, movement.NewMovement(
+					movements = append(movements, NewMovement(
 						p,
 						pieceAt,
 						p.Position,
-						position.NewPosition(finalI, finalJ),
+						NewPosition(finalI, finalJ),
 						false,
 					))
 				}
@@ -59,8 +56,8 @@ func (b Board) GetPiecePseudoMovements(p *piece.Piece) []movement.Movement {
 		}
 
 		return movements
-	case piece.Kind_Knight:
-		movements := []movement.Movement{}
+	case Kind_Knight:
+		movements := []Movement{}
 		dirs := [8][2]int{{-2, -1}, {-2, 1}, {-1, 2}, {1, 2}, {2, 1}, {2, -1}, {1, -2}, {-1, -2}} // {i, j} -> From TopRight, clockwise untill TopRight (bottom left)
 
 		for _, dir := range dirs {
@@ -73,11 +70,11 @@ func (b Board) GetPiecePseudoMovements(p *piece.Piece) []movement.Movement {
 					continue
 				}
 
-				movements = append(movements, movement.NewMovement(
+				movements = append(movements, NewMovement(
 					p,
 					pieceAt,
 					p.Position,
-					position.NewPosition(finalI, finalJ),
+					NewPosition(finalI, finalJ),
 					false,
 				))
 			}
@@ -85,11 +82,11 @@ func (b Board) GetPiecePseudoMovements(p *piece.Piece) []movement.Movement {
 
 		return movements
 
-	case piece.Kind_Pawn:
-		movements := []movement.Movement{}
+	case Kind_Pawn:
+		movements := []Movement{}
 
 		invertMult := 1
-		if p.Color == piece.Color_Black {
+		if p.Color == Color_Black {
 			invertMult = -1
 		}
 
@@ -108,11 +105,11 @@ func (b Board) GetPiecePseudoMovements(p *piece.Piece) []movement.Movement {
 					break
 				}
 
-				movements = append(movements, movement.NewMovement(
+				movements = append(movements, NewMovement(
 					p,
 					pieceAt,
 					p.Position,
-					position.NewPosition(finalI, p.Position.J),
+					NewPosition(finalI, p.Position.J),
 					p.IsPawnFirstMovement,
 				))
 			}
@@ -125,11 +122,11 @@ func (b Board) GetPiecePseudoMovements(p *piece.Piece) []movement.Movement {
 			if finalI >= 0 && finalJ >= 0 && finalI < 8 && finalJ < 8 {
 				pieceAt := b.GetPieceAt(finalI, finalJ)
 				if pieceAt != nil && pieceAt.Color != p.Color {
-					movements = append(movements, movement.NewMovement(
+					movements = append(movements, NewMovement(
 						p,
 						pieceAt,
 						p.Position,
-						position.NewPosition(finalI, finalJ),
+						NewPosition(finalI, finalJ),
 						false,
 					))
 				}
@@ -140,11 +137,11 @@ func (b Board) GetPiecePseudoMovements(p *piece.Piece) []movement.Movement {
 		// Two diagonals
 	}
 
-	return []movement.Movement{}
+	return []Movement{}
 }
 
-func (b Board) getOrthogonalPseudoMovements(p *piece.Piece) []movement.Movement {
-	movements := []movement.Movement{}
+func (b Board) getOrthogonalPseudoMovements(p *Piece) []Movement {
+	movements := []Movement{}
 
 	dirs := [4][2]int{{-1, 0}, {0, 1}, {1, 0}, {0, -1}} // {i, j} -> Top, Right, Bottom, Left
 
@@ -154,20 +151,20 @@ func (b Board) getOrthogonalPseudoMovements(p *piece.Piece) []movement.Movement 
 			pieceAt := b.GetPieceAt(i, j)
 
 			if pieceAt == nil {
-				movements = append(movements, movement.NewMovement(
+				movements = append(movements, NewMovement(
 					p,
 					nil,
 					p.Position,
-					position.NewPosition(i, j),
+					NewPosition(i, j),
 					false,
 				))
 			} else {
 				if pieceAt.Color != b.PlayerToMove {
-					movements = append(movements, movement.NewMovement(
+					movements = append(movements, NewMovement(
 						p,
 						pieceAt,
 						p.Position,
-						position.NewPosition(i, j),
+						NewPosition(i, j),
 						false,
 					))
 				}
@@ -180,8 +177,8 @@ func (b Board) getOrthogonalPseudoMovements(p *piece.Piece) []movement.Movement 
 	return movements
 }
 
-func (b Board) getDiagonalPseudoMovements(p *piece.Piece) []movement.Movement {
-	movements := []movement.Movement{}
+func (b Board) getDiagonalPseudoMovements(p *Piece) []Movement {
+	movements := []Movement{}
 
 	dirs := [4][2]int{{-1, -1}, {-1, 1}, {1, 1}, {1, -1}} // {i, j} -> TopLeft, TopRight, BottomRight, BottomLeft
 
@@ -191,20 +188,20 @@ func (b Board) getDiagonalPseudoMovements(p *piece.Piece) []movement.Movement {
 			pieceAt := b.GetPieceAt(i, j)
 
 			if pieceAt == nil {
-				movements = append(movements, movement.NewMovement(
+				movements = append(movements, NewMovement(
 					p,
 					nil,
 					p.Position,
-					position.NewPosition(i, j),
+					NewPosition(i, j),
 					false,
 				))
 			} else {
 				if pieceAt.Color != b.PlayerToMove {
-					movements = append(movements, movement.NewMovement(
+					movements = append(movements, NewMovement(
 						p,
 						pieceAt,
 						p.Position,
-						position.NewPosition(i, j),
+						NewPosition(i, j),
 						false,
 					))
 				}
