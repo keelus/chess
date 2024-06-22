@@ -21,5 +21,7 @@ func NewPiece(color Color, kind Kind, pos Position) Piece {
 }
 
 func (p Piece) DeepCopy() Piece {
-	return NewPiece(p.Color, p.Kind, NewPosition(p.Position.I, p.Position.J))
+	newPiece := NewPiece(p.Color, p.Kind, NewPosition(p.Position.I, p.Position.J))
+	newPiece.IsPawnFirstMovement = p.IsPawnFirstMovement
+	return newPiece
 }

@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"fmt"
 	"strconv"
 	"unicode"
 )
@@ -12,6 +13,8 @@ type Board struct {
 
 	CanKingCastling  map[Color]bool
 	CanQueenCastling map[Color]bool
+
+	EnPassant *Position
 }
 
 func NewEmptyBoard() Board {
@@ -82,38 +85,71 @@ func (b Board) GetPieceAt(i, j int) *Piece {
 
 // Suppose is legal
 func (b *Board) MakeMovement(movement Movement) {
+	b.EnPassant = nil
+
 	if movement.IsQueenSideCastling != nil || movement.IsKingSideCastling != nil { // Handle castling
 		b.CanQueenCastling[movement.MovingPiece.Color] = false
 		b.CanKingCastling[movement.MovingPiece.Color] = false
+
+		castlingRow := 7
+		if movement.MovingPiece.Color == Color_Black {
+			castlingRow = 0
+		}
+
 		if *movement.IsQueenSideCastling {
-			// TODO: Do not hardcode this
-			rookPiece := b.Data[7][0]
-			kingPiece := b.Data[7][4]
+			rookPiece := b.Data[castlingRow][0]
+			kingPiece := b.Data[castlingRow][4]
 
-			rookPiece.Position = NewPosition(7, 3)
-			b.Data[7][3] = rookPiece
-			b.Data[7][0] = nil
+			rookPiece.Position = NewPosition(castlingRow, 3)
+			b.Data[castlingRow][3] = rookPiece
+			b.Data[castlingRow][0] = nil
 
-			kingPiece.Position = NewPosition(7, 2)
-			b.Data[7][2] = kingPiece
-			b.Data[7][4] = nil
+			kingPiece.Position = NewPosition(castlingRow, 2)
+			b.Data[castlingRow][2] = kingPiece
+			b.Data[castlingRow][4] = nil
 		} else if *movement.IsKingSideCastling {
-			// TODO: Do not hardcode this
-			rookPiece := b.Data[7][7]
-			kingPiece := b.Data[7][4]
+			rookPiece := b.Data[castlingRow][7]
+			kingPiece := b.Data[castlingRow][4]
 
-			rookPiece.Position = NewPosition(7, 5)
-			b.Data[7][5] = rookPiece
-			b.Data[7][7] = nil
+			rookPiece.Position = NewPosition(castlingRow, 5)
+			b.Data[castlingRow][5] = rookPiece
+			b.Data[castlingRow][7] = nil
 
-			kingPiece.Position = NewPosition(7, 6)
-			b.Data[7][6] = kingPiece
-			b.Data[7][4] = nil
-
+			kingPiece.Position = NewPosition(castlingRow, 6)
+			b.Data[castlingRow][6] = kingPiece
+			b.Data[castlingRow][4] = nil
 		}
 	} else {
 		if movement.MovingPiece.Kind == Kind_Pawn {
 			movement.MovingPiece.IsPawnFirstMovement = false
+
+			if *movement.PawnIsDoublePositionMovement {
+				invertSum := -1
+				if movement.MovingPiece.Color == Color_Black {
+					invertSum = +1
+				}
+
+				newEnPassantPosition := NewPosition(movement.From.I+invertSum, movement.From.J)
+				b.EnPassant = &newEnPassantPosition
+			}
+		} else if movement.MovingPiece.Kind == Kind_King {
+			b.CanQueenCastling[movement.MovingPiece.Color] = false
+			b.CanKingCastling[movement.MovingPiece.Color] = false
+		} else if movement.MovingPiece.Kind == Kind_Rook {
+			rookRow := 7
+			if movement.MovingPiece.Color == Color_Black {
+				rookRow = 0
+			}
+
+			if pieceAt := b.GetPieceAt(rookRow, 0); pieceAt != nil && pieceAt == movement.MovingPiece { // Queen side
+				b.CanQueenCastling[movement.MovingPiece.Color] = false
+			} else if pieceAt := b.GetPieceAt(rookRow, 7); pieceAt != nil && pieceAt == movement.MovingPiece { // King side
+				b.CanKingCastling[movement.MovingPiece.Color] = false
+			}
+		}
+
+		if movement.TakingPiece != nil {
+			b.Data[movement.TakingPiece.Position.I][movement.TakingPiece.Position.J] = nil // Do it this way, so it's en passant compatible
 		}
 
 		movement.MovingPiece.Position = NewPosition(movement.To.I, movement.To.J)
@@ -123,6 +159,27 @@ func (b *Board) MakeMovement(movement Movement) {
 }
 
 func (b *Board) UndoMovement(movement Movement) {
+	fmt.Println("Undo movement")
+	// Remove the moved piece
+	b.Data[movement.To.I][movement.To.J] = nil
+
+	// Create the moved piece into the old position
+	movedPieceCopy := movement.MovingPieceCopy.DeepCopy()
+	b.Data[movement.MovingPieceCopy.Position.I][movement.MovingPieceCopy.Position.J] = &movedPieceCopy
+
+	// Create the taken piece (if aplicable) into the old position
+	if movement.TakingPieceCopy != nil {
+		takenPieceCopy := movement.TakingPieceCopy.DeepCopy()
+		b.Data[movement.TakingPieceCopy.Position.I][movement.TakingPieceCopy.Position.J] = &takenPieceCopy
+	}
+
+	// If is Pawn, set it's variables. Althought this might not be necessary
+	// if movement.MovingPieceCopy.Kind == Kind_Pawn {
+	// 	b.Data[movement.TakingPieceCopy.Position.I][movement.TakingPieceCopy.Position.J].IsPawnFirstMovement = *movement.PawnIsFirstMove
+	// 	//movement.MovingPieceCopy.IsPawnFirstMovement = *movement.PawnIsFirstMove
+	// }
+
+	b.EnPassant = movement.EnPassant
 }
 
 // For future implementation
