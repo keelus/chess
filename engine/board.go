@@ -331,6 +331,16 @@ func (b *Board) FilterPseudoMovements(movements []Movement) []Movement {
 		if (myMovement.IsQueenSideCastling != nil && *myMovement.IsQueenSideCastling) ||
 			(myMovement.IsKingSideCastling != nil && *myMovement.IsKingSideCastling) {
 			currentOpponentPseudo := b.GetPseudoMovements(opponentColor)
+			for _, opponentMovement := range currentOpponentPseudo {
+				if opponentMovement.TakingPiece.Kind == Kind_King {
+					isCastlingLegal = false
+					break
+				}
+			}
+			if !isCastlingLegal {
+				continue
+			}
+
 			// Cols that must not be being attacked
 			var colFrom, colTo int
 
