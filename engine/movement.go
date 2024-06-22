@@ -16,8 +16,13 @@ type Movement struct {
 	IsKingSideCastling  *bool
 	IsQueenSideCastling *bool
 
-	CanKingSideCastling  bool // TODO: These two only in castle or King moves
-	CanQueenSideCastling bool
+	CanWhiteQueenSideCastling bool
+	CanWhiteKingSideCastling  bool
+	CanBlackQueenSideCastling bool
+	CanBlackKingSideCastling  bool
+
+	// CanKingSideCastling  bool // TODO: These two only in castle or King moves
+	// CanQueenSideCastling bool
 
 	EnPassant *Position
 
@@ -41,7 +46,7 @@ func (m *Movement) WithCastling(isQueenSideMove, isKingSideMove bool) *Movement 
 	return m
 }
 
-func NewMovement(movingPiece Piece, from, to Position, enPassant *Position, canQueenSideCastling, canKingSideCastling bool) *Movement {
+func NewMovement(movingPiece Piece, from, to Position, enPassant *Position, canWhiteQueenSideCastling, canWhiteKingSideCastling, canBlackQueenSideCastling, canBlackKingSideCastling bool) *Movement {
 	return &Movement{
 		MovingPiece:   movingPiece,
 		IsTakingPiece: false,
@@ -49,8 +54,12 @@ func NewMovement(movingPiece Piece, from, to Position, enPassant *Position, canQ
 		To:            to,
 		EnPassant:     enPassant,
 
-		CanQueenSideCastling: canQueenSideCastling,
-		CanKingSideCastling:  canKingSideCastling,
+		CanWhiteQueenSideCastling: canWhiteQueenSideCastling,
+		CanWhiteKingSideCastling:  canWhiteKingSideCastling,
+		CanBlackQueenSideCastling: canBlackQueenSideCastling,
+		CanBlackKingSideCastling:  canBlackKingSideCastling,
+		// CanQueenSideCastling: canQueenSideCastling,
+		// CanKingSideCastling:  canKingSideCastling,
 	}
 }
 

@@ -1,7 +1,6 @@
 package engine
 
 import (
-	"fmt"
 	"strconv"
 	"unicode"
 )
@@ -100,7 +99,7 @@ func (b Board) GetPieceAt(i, j int) Piece {
 
 // Suppose is legal
 func (b *Board) MakeMovement(movement Movement) {
-	fmt.Printf("Do: %s\n", movement.ToString())
+	//fmt.Printf("Do: %s\n", movement.ToString())
 	b.EnPassant = nil
 
 	if movement.IsQueenSideCastling != nil || movement.IsKingSideCastling != nil { // Handle castling
@@ -186,9 +185,32 @@ func (b *Board) MakeMovement(movement Movement) {
 		}
 
 		if movement.IsTakingPiece {
-			// Do it this way, so it's en passant compatible
+			// Do it this wad, so it's en passant compatible
 			b.Data[movement.TakingPiece.Position.I][movement.TakingPiece.Position.J].Kind = Kind_None
 			b.Data[movement.TakingPiece.Position.I][movement.TakingPiece.Position.J].Color = Color_None
+
+			if movement.TakingPiece.Kind == Kind_Rook {
+				if b.CanQueenCastling[movement.TakingPiece.Color] {
+					castlingRow := 7
+					if movement.TakingPiece.Color == Color_Black {
+						castlingRow = 0
+					}
+
+					if movement.TakingPiece.Position.I == castlingRow && movement.TakingPiece.Position.J == 0 {
+						b.CanQueenCastling[movement.TakingPiece.Color] = false
+					}
+				}
+				if b.CanKingCastling[movement.TakingPiece.Color] {
+					castlingRow := 7
+					if movement.TakingPiece.Color == Color_Black {
+						castlingRow = 0
+					}
+
+					if movement.TakingPiece.Position.I == castlingRow && movement.TakingPiece.Position.J == 7 {
+						b.CanKingCastling[movement.TakingPiece.Color] = false
+					}
+				}
+			}
 		}
 
 		// movement.MovingPiece.Position = NewPosition(movement.To.I, movement.To.J)
@@ -204,10 +226,15 @@ func (b *Board) MakeMovement(movement Movement) {
 		b.Data[movement.From.I][movement.From.J].Color = Color_None
 		b.Data[movement.From.I][movement.From.J].IsPawnFirstMovement = false
 	}
+
+	b.PlayerToMove = Color_White
+	if movement.MovingPiece.Color == Color_White {
+		b.PlayerToMove = Color_Black
+	}
 }
 
 func (b *Board) UndoMovement(movement Movement) {
-	fmt.Printf("Undo: %s\n", movement.ToString())
+	//fmt.Printf("Undo: %s\n", movement.ToString())
 
 	// Remove the moved piece
 	b.Data[movement.To.I][movement.To.J].Kind = Kind_None
@@ -225,6 +252,7 @@ func (b *Board) UndoMovement(movement Movement) {
 		b.Data[movement.TakingPiece.Position.I][movement.TakingPiece.Position.J].Kind = movement.TakingPiece.Kind
 		b.Data[movement.TakingPiece.Position.I][movement.TakingPiece.Position.J].Color = movement.TakingPiece.Color
 		b.Data[movement.TakingPiece.Position.I][movement.TakingPiece.Position.J].IsPawnFirstMovement = movement.TakingPiece.IsPawnFirstMovement
+
 	}
 
 	if movement.IsQueenSideCastling != nil && *movement.IsQueenSideCastling {
@@ -257,13 +285,24 @@ func (b *Board) UndoMovement(movement Movement) {
 		b.Data[castlingRow][7].Color = movement.MovingPiece.Color
 	}
 
-	b.CanQueenCastling[movement.MovingPiece.Color] = movement.CanQueenSideCastling
-	b.CanKingCastling[movement.MovingPiece.Color] = movement.CanKingSideCastling
+	// b.CanQueenCastling[movement.MovingPiece.Color] = movement.CanQueenSideCastling
+	// b.CanKingCastling[movement.MovingPiece.Color] = movement.CanKingSideCastling
+
+	b.CanQueenCastling[Color_White] = movement.CanWhiteQueenSideCastling
+	b.CanKingCastling[Color_White] = movement.CanWhiteKingSideCastling
+	b.CanQueenCastling[Color_Black] = movement.CanBlackQueenSideCastling
+	b.CanKingCastling[Color_Black] = movement.CanBlackKingSideCastling
 
 	b.EnPassant = movement.EnPassant
+
+	b.PlayerToMove = Color_White
+	if movement.MovingPiece.Color == Color_Black {
+		b.PlayerToMove = Color_Black
+	}
 }
 
 func (b *Board) FilterPseudoMovements(movements []Movement) []Movement {
+	//beginningColor := b.PlayerToMove
 	filteredMovements := []Movement{}
 
 	opponentColor := Color_White
@@ -305,6 +344,10 @@ func (b *Board) FilterPseudoMovements(movements []Movement) []Movement {
 		// Check for check
 		b.UndoMovement(myMovement)
 	}
+
+	//endColor := b.PlayerToMove
+
+	//fmt.Printf("%c vs %c\n", beginningColor.ToRune(), endColor.ToRune())
 
 	return filteredMovements
 }

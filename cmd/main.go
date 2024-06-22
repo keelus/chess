@@ -4,6 +4,7 @@ import (
 	"chess/engine"
 	"fmt"
 	"math"
+	"time"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
@@ -30,12 +31,30 @@ func init() {
 	engine.LoadTextures()
 }
 
+func RunPerft(fen string, maxDepth int) {
+	board := engine.NewBoardFromFen(fen)
+
+	fmt.Printf("Depth result (max: %d)\n", maxDepth)
+	for depth := 1; depth <= maxDepth; depth++ {
+		begin := time.Now()
+		result := board.Perft(depth)
+		spentMs := time.Now().Sub(begin).Milliseconds()
+		fmt.Printf("\tPerft at depth %d: %d movements (%d milliseconds)\n", depth, result, spentMs)
+	}
+	panic("\n Perft test ended")
+}
+
 func main() {
 	//board := engine.NewBoardFromFen(8/3p4/2P1P3/8/8/8/8/8 b KQkq - 0 1")
 	//board := engine.NewBoardFromFen("8/p7/8/8/3P3/8/5p3/R3K2R w KQkq - 0 1")
 	//board := engine.NewBoardFromFen("3qk3/8/8/8/8/8/8/R3K2R w KQ - 0 1")
 	//board := engine.NewBoardFromFen("8/8/8/8/4p3/8/3P4/8 w KQkq - 0 1")
+	//board := engine.NewBoardFromFen("4k3/8/8/8/8/1n6/8/R3K2R w KQ - 0 1")
+	//board := engine.NewBoardFromFen("4k3/8/8/8/8/6n1/8/R3K2R w KQ - 0 1")
+
 	board := engine.NewStartingBoard()
+
+	//RunPerft("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 8)
 
 	var activePosition *engine.Position = nil
 	var lastMovement *engine.Movement = nil
@@ -43,8 +62,8 @@ func main() {
 	for !rl.WindowShouldClose() {
 		currentMovements := []engine.Movement{}
 		if activePosition != nil {
-			currentMovements = board.GetLegalMovements(board.PlayerToMove)
-			//currentMovements = board.GetPseudoMovements(board.PlayerToMove)
+			//currentMovements = board.GetLegalMovements(board.PlayerToMove)
+			currentMovements = board.GetPseudoMovements(board.PlayerToMove)
 		}
 		//currentMovements := board.GetLegalMovements()
 
@@ -190,6 +209,13 @@ func main() {
 				rl.DarkGreen,
 			)
 		}
+
+		rl.DrawText(
+			fmt.Sprintf("Turn color: %c", board.PlayerToMove.ToRune()),
+			600+5, SCREEN_HEIGHT-BOTTOM_BAR+2+20,
+			16,
+			rl.RayWhite,
+		)
 
 		rl.EndDrawing()
 	}
