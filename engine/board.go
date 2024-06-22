@@ -229,9 +229,14 @@ func (b *Board) MakeMovement(movement Movement) {
 		// b.Data[movement.To.I][movement.To.J] = movement.MovingPiece
 		// b.Data[movement.From.I][movement.From.J] = nil
 
-		// Update data of the new piece
-		b.Data[movement.To.I][movement.To.J].Kind = movement.MovingPiece.Kind
 		b.Data[movement.To.I][movement.To.J].Color = movement.MovingPiece.Color
+		if movement.PawnPromotionTo == nil {
+			// Update data of the new piece
+			b.Data[movement.To.I][movement.To.J].Kind = movement.MovingPiece.Kind
+		} else {
+			// Promote the piece
+			b.Data[movement.To.I][movement.To.J].Kind = *movement.PawnPromotionTo
+		}
 
 		// Delete this piece's previous position
 		b.Data[movement.From.I][movement.From.J].Kind = Kind_None
