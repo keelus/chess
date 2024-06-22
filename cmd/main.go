@@ -32,8 +32,8 @@ func init() {
 
 func main() {
 	//board := engine.NewBoardFromFen("8/3p4/2P1P3/8/8/8/8/8 b KQkq - 0 1")
-	//board := engine.NewBoardFromFen("r3k2r/8/8/6p4/3P3/8/7P/8 b KQkq - 0 1")
-	board := engine.NewBoardFromFen("8/8/8/8/4p3/8/3P4/8 w KQkq - 0 1")
+	board := engine.NewBoardFromFen("8/p7/8/8/3P3/8/4p6/R3K2R w KQkq - 0 1")
+	//board := engine.NewBoardFromFen("8/8/8/8/4p3/8/3P4/8 w KQkq - 0 1")
 
 	var activePiece *engine.Piece = nil
 	var lastMovement *engine.Movement = nil

@@ -173,6 +173,31 @@ func (b *Board) UndoMovement(movement Movement) {
 		b.Data[movement.TakingPieceCopy.Position.I][movement.TakingPieceCopy.Position.J] = &takenPieceCopy
 	}
 
+	if movement.IsQueenSideCastling != nil && *movement.IsQueenSideCastling {
+		// Move castle
+		castlingRow := 7
+		if b.PlayerToMove == Color_Black {
+			castlingRow = 0
+		}
+
+		// Delete castle
+		b.Data[castlingRow][3] = nil
+		b.CreatePieceAt(b.PlayerToMove, Kind_Rook, castlingRow, 0)
+	} else if movement.IsKingSideCastling != nil && *movement.IsKingSideCastling {
+		// Move castle
+		castlingRow := 7
+		if b.PlayerToMove == Color_Black {
+			castlingRow = 0
+		}
+
+		// Delete castle
+		b.Data[castlingRow][5] = nil
+		b.CreatePieceAt(b.PlayerToMove, Kind_Rook, castlingRow, 7)
+	}
+
+	b.CanQueenCastling[movement.MovingPieceCopy.Color] = movement.CanQueenSideCastling
+	b.CanKingCastling[movement.MovingPieceCopy.Color] = movement.CanKingSideCastling
+
 	// If is Pawn, set it's variables. Althought this might not be necessary
 	// if movement.MovingPieceCopy.Kind == Kind_Pawn {
 	// 	b.Data[movement.TakingPieceCopy.Position.I][movement.TakingPieceCopy.Position.J].IsPawnFirstMovement = *movement.PawnIsFirstMove
