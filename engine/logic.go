@@ -70,12 +70,10 @@ func (b Board) GetPiecePseudoMovements(p Piece) []Movement {
 			}
 		}
 
-		// TODO: Black
-
-		handleCastling := func(jDelta, jStop int) {
+		if b.CanQueenCastling[p.Color] {
 			// Check if space to rook is empty
 			canCastle := true
-			for j := p.Position.J + jDelta; j != jStop; j += jDelta {
+			for j := p.Position.J - 1; j >= p.Position.J-3; j-- {
 				if b.GetPieceAt(p.Position.I, j).Kind != Kind_None {
 					canCastle = false
 					break
@@ -86,22 +84,40 @@ func (b Board) GetPiecePseudoMovements(p Piece) []Movement {
 				movements = append(movements,
 					*NewMovement(p,
 						p.Position,
-						NewPosition(p.Position.I, p.Position.J+jDelta*2),
+						NewPosition(p.Position.I, p.Position.J-2),
 						b.EnPassant,
 						b.CanQueenCastling[Color_White],
 						b.CanKingCastling[Color_White],
 						b.CanQueenCastling[Color_Black],
 						b.CanKingCastling[Color_Black],
-					).WithCastling(jDelta == -1, jDelta == 1))
+					).WithCastling(true, false))
 			}
-		}
 
-		if b.CanQueenCastling[p.Color] {
-			handleCastling(-1, 1)
 		}
 
 		if b.CanKingCastling[p.Color] {
-			handleCastling(1, 7)
+			// Check if space to rook is empty
+			canCastle := true
+			for j := p.Position.J + 1; j < 7; j++ {
+				if b.GetPieceAt(p.Position.I, j).Kind != Kind_None {
+					canCastle = false
+					break
+				}
+			}
+
+			if canCastle {
+				movements = append(movements,
+					*NewMovement(p,
+						p.Position,
+						NewPosition(p.Position.I, p.Position.J+2),
+						b.EnPassant,
+						b.CanQueenCastling[Color_White],
+						b.CanKingCastling[Color_White],
+						b.CanQueenCastling[Color_Black],
+						b.CanKingCastling[Color_Black],
+					).WithCastling(false, true))
+			}
+
 		}
 
 		return movements
