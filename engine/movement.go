@@ -11,7 +11,8 @@ type Movement struct {
 	To   Position
 
 	// Next variables refer to the state before this movement have been done
-	PawnIsDoublePositionMovement *bool
+	PawnIsDoublePositionMovement        *bool
+	PawnIsAttackingButNotTakingDiagonal *bool
 
 	IsKingSideCastling  *bool
 	IsQueenSideCastling *bool
@@ -35,8 +36,9 @@ func (m *Movement) WithTakingPiece(piece Piece) *Movement {
 	return m
 }
 
-func (m *Movement) WithPawn(isDoublePositionMovement bool) *Movement {
+func (m *Movement) WithPawn(isDoublePositionMovement, attackingButNotTakingDiagonal bool) *Movement {
 	m.PawnIsDoublePositionMovement = &isDoublePositionMovement
+	m.PawnIsAttackingButNotTakingDiagonal = &attackingButNotTakingDiagonal
 	return m
 }
 

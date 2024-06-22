@@ -323,6 +323,10 @@ func (b *Board) FilterPseudoMovements(movements []Movement) []Movement {
 	}
 
 	for _, myMovement := range movements {
+		if myMovement.PawnIsAttackingButNotTakingDiagonal != nil && *myMovement.PawnIsAttackingButNotTakingDiagonal {
+			continue
+		}
+
 		isCastlingLegal := true
 		if (myMovement.IsQueenSideCastling != nil && *myMovement.IsQueenSideCastling) ||
 			(myMovement.IsKingSideCastling != nil && *myMovement.IsKingSideCastling) {

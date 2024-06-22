@@ -191,7 +191,7 @@ func (b Board) GetPiecePseudoMovements(p Piece) []Movement {
 						b.CanKingCastling[Color_White],
 						b.CanQueenCastling[Color_Black],
 						b.CanKingCastling[Color_Black],
-					).WithPawn(i == -2))
+					).WithPawn(i == -2, false))
 			}
 		}
 
@@ -201,6 +201,8 @@ func (b Board) GetPiecePseudoMovements(p Piece) []Movement {
 			finalI, finalJ := p.Position.I+dir[0]*invertMult, p.Position.J+dir[1]*invertMult
 			if finalI >= 0 && finalJ >= 0 && finalI < 8 && finalJ < 8 {
 				pieceAt := b.GetPieceAt(finalI, finalJ)
+				// TODO: Pawn attacking castling could be done in a different way:
+				// PseudoMovements returns if attackingQueen, and if attackingKing (if any piece is) so is faster
 
 				if pieceAt.Kind != Kind_None && pieceAt.Color != p.Color {
 					movements = append(movements,
@@ -212,8 +214,21 @@ func (b Board) GetPiecePseudoMovements(p Piece) []Movement {
 							b.CanKingCastling[Color_White],
 							b.CanQueenCastling[Color_Black],
 							b.CanKingCastling[Color_Black],
-						).WithTakingPiece(pieceAt).WithPawn(false))
-				} else if pieceAt.Kind == Kind_None && b.EnPassant != nil && b.EnPassant.I == finalI && b.EnPassant.J == finalJ {
+						).WithTakingPiece(pieceAt).WithPawn(false, false))
+				} else {
+					movements = append(movements,
+						*NewMovement(p,
+							p.Position,
+							NewPosition(finalI, finalJ),
+							b.EnPassant,
+							b.CanQueenCastling[Color_White],
+							b.CanKingCastling[Color_White],
+							b.CanQueenCastling[Color_Black],
+							b.CanKingCastling[Color_Black],
+						).WithPawn(false, true))
+				}
+
+				if pieceAt.Kind == Kind_None && b.EnPassant != nil && b.EnPassant.I == finalI && b.EnPassant.J == finalJ {
 					enPassantPiecePosition := NewPosition(b.EnPassant.I+1, b.EnPassant.J)
 					if p.Color == Color_Black {
 						enPassantPiecePosition.I = b.EnPassant.I - 1
@@ -230,7 +245,7 @@ func (b Board) GetPiecePseudoMovements(p Piece) []Movement {
 							b.CanKingCastling[Color_White],
 							b.CanQueenCastling[Color_Black],
 							b.CanKingCastling[Color_Black],
-						).WithTakingPiece(pieceAt).WithPawn(false))
+						).WithTakingPiece(pieceAt).WithPawn(false, false))
 				}
 			}
 		}
