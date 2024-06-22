@@ -7,6 +7,7 @@ type Color uint
 const (
 	Color_White Color = iota
 	Color_Black
+	Color_None
 )
 
 func (c Color) ToRune() rune {

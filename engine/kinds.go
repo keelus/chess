@@ -13,6 +13,7 @@ const (
 	Kind_Bishop
 	Kind_Knight
 	Kind_Pawn
+	Kind_None
 )
 
 func (t Kind) ToRune() rune {

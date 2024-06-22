@@ -31,15 +31,21 @@ func init() {
 }
 
 func main() {
-	//board := engine.NewBoardFromFen("8/3p4/2P1P3/8/8/8/8/8 b KQkq - 0 1")
-	board := engine.NewBoardFromFen("8/p7/8/8/3P3/8/4p6/R3K2R w KQkq - 0 1")
+	//board := engine.NewBoardFromFen(8/3p4/2P1P3/8/8/8/8/8 b KQkq - 0 1")
+	//board := engine.NewBoardFromFen("8/p7/8/8/3P3/8/5p3/R3K2R w KQkq - 0 1")
+	//board := engine.NewBoardFromFen("3qk3/8/8/8/8/8/8/R3K2R w KQ - 0 1")
 	//board := engine.NewBoardFromFen("8/8/8/8/4p3/8/3P4/8 w KQkq - 0 1")
+	board := engine.NewStartingBoard()
 
-	var activePiece *engine.Piece = nil
+	var activePosition *engine.Position = nil
 	var lastMovement *engine.Movement = nil
 
 	for !rl.WindowShouldClose() {
-		currentMovements := board.GetPseudoMovements()
+		currentMovements := []engine.Movement{}
+		if activePosition != nil {
+			currentMovements = board.GetLegalMovements(board.PlayerToMove)
+			//currentMovements = board.GetPseudoMovements(board.PlayerToMove)
+		}
 		//currentMovements := board.GetLegalMovements()
 
 		if rl.IsMouseButtonPressed(rl.MouseButtonLeft) {
@@ -47,21 +53,27 @@ func main() {
 			j := int(math.Floor(float64(rl.GetMousePosition().X) / float64(CELL_SIZE)))
 
 			clickedAMovement := false
-			if activePiece != nil {
+			if activePosition != nil {
 				for _, movement := range currentMovements {
-					if movement.MovingPiece == activePiece {
+					if movement.From.I == activePosition.I && movement.From.J == activePosition.J {
 						if movement.To.I == i && movement.To.J == j {
 							clickedAMovement = true
 							board.MakeMovement(movement)
 							lastMovement = &movement
-							activePiece = nil
+							activePosition = nil
+							break
 						}
 					}
 				}
 			}
 
 			if !clickedAMovement && i >= 0 && j >= 0 && i < 8 && j < 8 {
-				activePiece = board.GetPieceAt(i, j)
+				if board.GetPieceAt(i, j).Kind == engine.Kind_None {
+					activePosition = nil
+				} else {
+					newActivePosition := engine.NewPosition(i, j)
+					activePosition = &newActivePosition
+				}
 			}
 		}
 
@@ -69,6 +81,14 @@ func main() {
 			if lastMovement != nil {
 				board.UndoMovement(*lastMovement)
 				lastMovement = nil
+			}
+		}
+
+		if rl.IsKeyPressed(rl.KeyT) {
+			if board.PlayerToMove == engine.Color_White {
+				board.PlayerToMove = engine.Color_Black
+			} else {
+				board.PlayerToMove = engine.Color_White
 			}
 		}
 
@@ -90,23 +110,23 @@ func main() {
 
 				rl.DrawRectangle(j*CELL_SIZE, i*CELL_SIZE, CELL_SIZE, CELL_SIZE, cellColor)
 
-				if board.Data[i][j] != nil {
+				if board.Data[i][j].Kind != engine.Kind_None {
 					currentPiece := board.Data[i][j]
 					rl.DrawTexture(engine.GetPieceTexture(currentPiece.Color, currentPiece.Kind), j*CELL_SIZE, i*CELL_SIZE, rl.RayWhite)
 				}
 			}
 		}
 
-		if activePiece != nil {
-			totalMovements := 0
+		if activePosition != nil {
+			totalThisPieceMovements := 0
 
 			for _, m := range currentMovements {
-				if m.MovingPiece == activePiece {
-					//fmt.Println(m)
-					totalMovements++
+				if m.From.I == activePosition.I && m.From.J == activePosition.J {
+					//fmt.Println(m.MovingPiece)
+					totalThisPieceMovements++
 
 					cellColor := rl.NewColor(209, 121, 27, 127)
-					if m.TakingPiece != nil {
+					if m.IsTakingPiece {
 						cellColor = rl.NewColor(209, 42, 27, 127)
 					}
 
@@ -114,14 +134,18 @@ func main() {
 				}
 			}
 
-			fmt.Printf("This piece has %d movements available.\n", totalMovements)
+			fmt.Printf("This piece has %d movements available.\n", totalThisPieceMovements)
 		}
+
+		// Evaluate all total movements of both players
+		// totalMovements := len(board.GetLegalMovements(engine.Color_White)) + len(board.GetLegalMovements(engine.Color_Black))
+		// fmt.Printf("\n##### TOTAL MOVEMENTS NOW: %d #####\n\n", totalMovements)
 
 		// Draw team information
 		drawPlayerInformation := func(xPos int32, color engine.Color) {
 			rl.DrawText(fmt.Sprintf("Player %c", color.ToRune()), xPos+5, SCREEN_HEIGHT-BOTTOM_BAR+2, 20, rl.RayWhite)
 			rl.DrawText(
-				fmt.Sprintf("-Can queen castle: %t", board.CanQueenCastling[engine.Color_White]),
+				fmt.Sprintf("-Can queen castle: %t", board.CanQueenCastling[color]),
 				xPos+5, SCREEN_HEIGHT-BOTTOM_BAR+2+20,
 				16,
 				func() rl.Color {
@@ -132,7 +156,7 @@ func main() {
 				}(),
 			)
 			rl.DrawText(
-				fmt.Sprintf("-Can king castle: %t", board.CanKingCastling[engine.Color_White]),
+				fmt.Sprintf("-Can king castle: %t", board.CanKingCastling[color]),
 				xPos+5, SCREEN_HEIGHT-BOTTOM_BAR+2+20+16,
 				16,
 				func() rl.Color {

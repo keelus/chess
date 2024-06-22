@@ -1,11 +1,11 @@
 package engine
 
-type Movement struct {
-	MovingPiece *Piece
-	TakingPiece *Piece // Optional
+import "fmt"
 
-	MovingPieceCopy Piece
-	TakingPieceCopy *Piece
+type Movement struct {
+	MovingPiece   Piece
+	TakingPiece   Piece // Optional
+	IsTakingPiece bool
 
 	From Position
 	To   Position
@@ -24,14 +24,9 @@ type Movement struct {
 	// TODO: To later UNDO a Movement, might be necessary to add more parameters (such as Castling abilities)
 }
 
-func (m *Movement) WithTakingPiece(piece *Piece) *Movement {
-	if piece == nil {
-		return m
-	}
-
+func (m *Movement) WithTakingPiece(piece Piece) *Movement {
 	m.TakingPiece = piece
-	takingPieceCopy := piece.DeepCopy()
-	m.TakingPieceCopy = &takingPieceCopy
+	m.IsTakingPiece = true
 	return m
 }
 
@@ -46,15 +41,19 @@ func (m *Movement) WithCastling(isQueenSideMove, isKingSideMove bool) *Movement 
 	return m
 }
 
-func NewMovement(movingPiece *Piece, from, to Position, enPassant *Position, canQueenSideCastling, canKingSideCastling bool) *Movement {
+func NewMovement(movingPiece Piece, from, to Position, enPassant *Position, canQueenSideCastling, canKingSideCastling bool) *Movement {
 	return &Movement{
-		MovingPiece:     movingPiece,
-		MovingPieceCopy: movingPiece.DeepCopy(),
-		From:            from,
-		To:              to,
-		EnPassant:       enPassant,
+		MovingPiece:   movingPiece,
+		IsTakingPiece: false,
+		From:          from,
+		To:            to,
+		EnPassant:     enPassant,
 
 		CanQueenSideCastling: canQueenSideCastling,
 		CanKingSideCastling:  canKingSideCastling,
 	}
+}
+
+func (m Movement) ToString() string {
+	return fmt.Sprintf("Piece [color: %c, kind: %c] moves from (%d, %d) to (%d, %d) [takes: %t].", m.MovingPiece.Color.ToRune(), m.MovingPiece.Kind.ToRune(), m.From.I, m.From.J, m.To.I, m.To.J, m.IsTakingPiece)
 }
