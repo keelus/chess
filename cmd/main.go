@@ -38,7 +38,7 @@ func RunPerft(fen string, maxDepth int) {
 	for depth := 1; depth <= maxDepth; depth++ {
 		begin := time.Now()
 		positionMap := make(map[string]int)
-		result := board.Perft(depth, "", positionMap)
+		result := board.Perft(depth, depth, "", positionMap)
 		spentMs := time.Now().Sub(begin).Milliseconds()
 
 		for move, nodes := range positionMap {
@@ -61,7 +61,7 @@ func main() {
 	//board := engine.NewStartingBoard()
 
 	//RunPerft("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 2)
-	//RunPerft("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1", 2)
+	RunPerft("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1", 3)
 	board := engine.NewBoardFromFen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1")
 
 	var activePosition *engine.Position = nil
