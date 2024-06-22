@@ -41,9 +41,9 @@ func RunPerft(fen string, maxDepth int) {
 		result := board.Perft(depth, depth, "", positionMap)
 		spentMs := time.Now().Sub(begin).Milliseconds()
 
-		for move, nodes := range positionMap {
-			fmt.Printf("%s: %d\n", move, nodes)
-		}
+		// for move, nodes := range positionMap {
+		// 	fmt.Printf("%s: %d\n", move, nodes)
+		// }
 
 		fmt.Printf("\tPerft at depth %d: %d movements (%d milliseconds)\n", depth, result, spentMs)
 	}
@@ -51,18 +51,7 @@ func RunPerft(fen string, maxDepth int) {
 }
 
 func main() {
-	//board := engine.NewBoardFromFen(8/3p4/2P1P3/8/8/8/8/8 b KQkq - 0 1")
-	//board := engine.NewBoardFromFen("8/p7/8/8/3P3/8/5p3/R3K2R w KQkq - 0 1")
-	//board := engine.NewBoardFromFen("3qk3/8/8/8/8/8/8/R3K2R w KQ - 0 1")
-	//board := engine.NewBoardFromFen("8/8/8/8/4p3/8/3P4/8 w KQkq - 0 1")
-	//board := engine.NewBoardFromFen("4k3/8/8/8/8/1n6/8/R3K2R w KQ - 0 1")
-	//board := engine.NewBoardFromFen("4k3/8/8/8/8/6n1/8/R3K2R w KQ - 0 1")
-
-	//board := engine.NewStartingBoard()
-
-	//RunPerft("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 2)
-	RunPerft("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1", 3)
-	board := engine.NewBoardFromFen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1")
+	board := engine.NewStartingBoard()
 
 	var activePosition *engine.Position = nil
 	var lastMovement *engine.Movement = nil
@@ -70,8 +59,8 @@ func main() {
 	for !rl.WindowShouldClose() {
 		currentMovements := []engine.Movement{}
 		if activePosition != nil {
-			//currentMovements = board.GetLegalMovements(board.PlayerToMove)
-			currentMovements = board.GetPseudoMovements(board.PlayerToMove)
+			currentMovements = board.GetLegalMovements(board.PlayerToMove)
+			//currentMovements = board.GetPseudoMovements(board.PlayerToMove)
 		}
 		//currentMovements := board.GetLegalMovements()
 
@@ -164,9 +153,8 @@ func main() {
 			fmt.Printf("This piece has %d movements available.\n", totalThisPieceMovements)
 		}
 
-		// Evaluate all total movements of both players
-		totalMovements := len(board.GetLegalMovements(board.PlayerToMove))
-		fmt.Printf("\n##### TOTAL MOVEMENTS NOW: %d #####\n\n", totalMovements)
+		// totalMovements := len(board.GetLegalMovements(board.PlayerToMove))
+		// fmt.Printf("\n##### TOTAL MOVEMENTS NOW: %d #####\n\n", totalMovements)
 
 		// Draw team information
 		drawPlayerInformation := func(xPos int32, color engine.Color) {
