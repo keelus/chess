@@ -420,6 +420,31 @@ func (b Board) ToFen() string {
 		dataFen = fmt.Sprintf("%s/", dataFen)
 	}
 
+	dataFen = fmt.Sprintf("%s", dataFen[:len(dataFen)-1])
+
+	dataFen = fmt.Sprintf("%s %c ", dataFen, b.PlayerToMove.ToRune())
+
+	if b.CanKingCastling[Color_White] {
+		dataFen = fmt.Sprintf("%sK", dataFen)
+	}
+	if b.CanQueenCastling[Color_White] {
+		dataFen = fmt.Sprintf("%sQ", dataFen)
+	}
+	if b.CanKingCastling[Color_Black] {
+		dataFen = fmt.Sprintf("%sk", dataFen)
+	}
+	if b.CanQueenCastling[Color_Black] {
+		dataFen = fmt.Sprintf("%sq", dataFen)
+	}
+
+	if b.EnPassant != nil {
+		dataFen = fmt.Sprintf("%s %s", dataFen, b.EnPassant.ToAlgebraic())
+	} else {
+		dataFen = fmt.Sprintf("%s -", dataFen)
+	}
+
+	dataFen = fmt.Sprintf("%s 0 1", dataFen)
+
 	return dataFen
 }
 
