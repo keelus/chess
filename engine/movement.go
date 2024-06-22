@@ -66,3 +66,10 @@ func NewMovement(movingPiece Piece, from, to Position, enPassant *Position, canW
 func (m Movement) ToString() string {
 	return fmt.Sprintf("Piece [color: %c, kind: %c] moves from (%d, %d) to (%d, %d) [takes: %t].", m.MovingPiece.Color.ToRune(), m.MovingPiece.Kind.ToRune(), m.From.I, m.From.J, m.To.I, m.To.J, m.IsTakingPiece)
 }
+
+func (m Movement) ToAlgebraic() string {
+	from := m.From
+	to := m.To
+
+	return fmt.Sprintf("%s%s", from.ToAlgebraic(), to.ToAlgebraic())
+}
