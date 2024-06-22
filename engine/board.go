@@ -74,7 +74,18 @@ func NewBoardFromFen(fen string) Board {
 				col += colsToJump - 1 // Subtract current
 			} else {
 				kind, color := KindAndColorFromRune(colData)
+
 				newBoard.CreatePieceAt(color, kind, row, col)
+				if kind == Kind_Pawn {
+					pawnRow := 6
+					if color == Color_Black {
+						pawnRow = 1
+					}
+
+					if row != pawnRow {
+						newBoard.Data[row][col].IsPawnFirstMovement = false
+					}
+				}
 			}
 
 			col++
