@@ -323,6 +323,9 @@ func (b *Board) FilterPseudoMovements(movements []Movement) []Movement {
 	}
 
 	for _, myMovement := range movements {
+		// Check this ???
+		// This attack does not have to be evaluated, as its not taking, and pawns cant move diagonally while not attacking
+		// The purpose of this is to, when checking a castling, having the movements (these "attacking but not taking") diagonals
 		if myMovement.PawnIsAttackingButNotTakingDiagonal != nil && *myMovement.PawnIsAttackingButNotTakingDiagonal {
 			continue
 		}
@@ -332,7 +335,7 @@ func (b *Board) FilterPseudoMovements(movements []Movement) []Movement {
 			(myMovement.IsKingSideCastling != nil && *myMovement.IsKingSideCastling) {
 			currentOpponentPseudo := b.GetPseudoMovements(opponentColor)
 			for _, opponentMovement := range currentOpponentPseudo {
-				if opponentMovement.TakingPiece.Kind == Kind_King {
+				if opponentMovement.IsTakingPiece && opponentMovement.TakingPiece.Kind == Kind_King {
 					isCastlingLegal = false
 					break
 				}
