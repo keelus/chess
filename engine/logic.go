@@ -173,6 +173,12 @@ func (b Board) GetPiecePseudoMovements(p Piece) []Movement {
 			maxDistance = -1
 		}
 
+		promotionRow := 0
+		promotingKinds := [4]Kind{Kind_Queen, Kind_Rook, Kind_Bishop, Kind_Knight}
+		if p.Color == Color_Black {
+			promotionRow = 7
+		}
+
 		// Straight line
 		for i := -1; i >= maxDistance; i-- {
 			finalI := p.Position.I + i*invertMult
@@ -182,16 +188,31 @@ func (b Board) GetPiecePseudoMovements(p Piece) []Movement {
 					break
 				}
 
-				movements = append(movements,
-					*NewMovement(p,
-						p.Position,
-						NewPosition(finalI, p.Position.J),
-						b.EnPassant,
-						b.CanQueenCastling[Color_White],
-						b.CanKingCastling[Color_White],
-						b.CanQueenCastling[Color_Black],
-						b.CanKingCastling[Color_Black],
-					).WithPawn(i == -2, false))
+				if finalI == promotionRow {
+					for _, kind := range promotingKinds {
+						movements = append(movements,
+							*NewMovement(p,
+								p.Position,
+								NewPosition(finalI, p.Position.J),
+								b.EnPassant,
+								b.CanQueenCastling[Color_White],
+								b.CanKingCastling[Color_White],
+								b.CanQueenCastling[Color_Black],
+								b.CanKingCastling[Color_Black],
+							).WithPawn(i == -2, false).WithPawnPromotion(kind))
+					}
+				} else {
+					movements = append(movements,
+						*NewMovement(p,
+							p.Position,
+							NewPosition(finalI, p.Position.J),
+							b.EnPassant,
+							b.CanQueenCastling[Color_White],
+							b.CanKingCastling[Color_White],
+							b.CanQueenCastling[Color_Black],
+							b.CanKingCastling[Color_Black],
+						).WithPawn(i == -2, false))
+				}
 			}
 		}
 
@@ -205,16 +226,31 @@ func (b Board) GetPiecePseudoMovements(p Piece) []Movement {
 				// PseudoMovements returns if attackingQueen, and if attackingKing (if any piece is) so is faster
 
 				if pieceAt.Kind != Kind_None && pieceAt.Color != p.Color {
-					movements = append(movements,
-						*NewMovement(p,
-							p.Position,
-							NewPosition(finalI, finalJ),
-							b.EnPassant,
-							b.CanQueenCastling[Color_White],
-							b.CanKingCastling[Color_White],
-							b.CanQueenCastling[Color_Black],
-							b.CanKingCastling[Color_Black],
-						).WithTakingPiece(pieceAt).WithPawn(false, false))
+					if finalI == promotionRow {
+						for _, kind := range promotingKinds {
+							movements = append(movements,
+								*NewMovement(p,
+									p.Position,
+									NewPosition(finalI, finalJ),
+									b.EnPassant,
+									b.CanQueenCastling[Color_White],
+									b.CanKingCastling[Color_White],
+									b.CanQueenCastling[Color_Black],
+									b.CanKingCastling[Color_Black],
+								).WithTakingPiece(pieceAt).WithPawn(false, false).WithPawnPromotion(kind))
+						}
+					} else {
+						movements = append(movements,
+							*NewMovement(p,
+								p.Position,
+								NewPosition(finalI, finalJ),
+								b.EnPassant,
+								b.CanQueenCastling[Color_White],
+								b.CanKingCastling[Color_White],
+								b.CanQueenCastling[Color_Black],
+								b.CanKingCastling[Color_Black],
+							).WithTakingPiece(pieceAt).WithPawn(false, false))
+					}
 				} else {
 					movements = append(movements,
 						*NewMovement(p,

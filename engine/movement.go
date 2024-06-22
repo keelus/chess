@@ -27,7 +27,14 @@ type Movement struct {
 
 	EnPassant *Position
 
+	PawnPromotionTo *Kind
+
 	// TODO: To later UNDO a Movement, might be necessary to add more parameters (such as Castling abilities)
+}
+
+func (m *Movement) WithPawnPromotion(newKind Kind) *Movement {
+	m.PawnPromotionTo = &newKind
+	return m
 }
 
 func (m *Movement) WithTakingPiece(piece Piece) *Movement {
@@ -73,5 +80,10 @@ func (m Movement) ToAlgebraic() string {
 	from := m.From
 	to := m.To
 
-	return fmt.Sprintf("%s%s", from.ToAlgebraic(), to.ToAlgebraic())
+	algebraic := fmt.Sprintf("%s%s", from.ToAlgebraic(), to.ToAlgebraic())
+	if m.PawnPromotionTo != nil {
+		algebraic = fmt.Sprintf("%s%c", algebraic, (*m.PawnPromotionTo).ToRune())
+	}
+
+	return algebraic
 }
