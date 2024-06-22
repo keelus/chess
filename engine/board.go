@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"fmt"
 	"strconv"
 	"unicode"
 )
@@ -388,6 +389,38 @@ func (b Board) CheckForCastlingLegal(row, colFrom, colTo int, opponentPseudoMove
 		}
 	}
 	return true
+}
+
+// TODO: Complete
+func (b Board) ToFen() string {
+	dataFen := ""
+	spaceAccum := 0
+
+	for i := 0; i < 8; i++ {
+		for j := 0; j < 8; j++ {
+			if b.Data[i][j].Kind == Kind_None {
+				spaceAccum++
+			} else {
+				if spaceAccum > 0 {
+					dataFen = fmt.Sprintf("%s%d", dataFen, spaceAccum)
+					spaceAccum = 0
+				}
+				kindRune := b.Data[i][j].Kind.ToRune()
+				if b.Data[i][j].Color == Color_White {
+					kindRune = unicode.ToUpper(kindRune)
+				}
+				dataFen = fmt.Sprintf("%s%c", dataFen, kindRune)
+			}
+		}
+
+		if spaceAccum > 0 {
+			dataFen = fmt.Sprintf("%s%d", dataFen, spaceAccum)
+			spaceAccum = 0
+		}
+		dataFen = fmt.Sprintf("%s/", dataFen)
+	}
+
+	return dataFen
 }
 
 // We have White pseudo movements
