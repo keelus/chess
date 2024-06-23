@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-func (b *Board) Perft(initialDepth, depth int, currentMove string, positionVerbose bool) int {
+func (g *Game) Perft(initialDepth, depth int, currentMove string, positionVerbose bool) int {
 	var nMoves, i int
 	nodes := 0
 
@@ -21,18 +21,18 @@ func (b *Board) Perft(initialDepth, depth int, currentMove string, positionVerbo
 		return 1
 	}
 
-	moveList := b.GetLegalMovements(b.PlayerToMove)
+	moveList := g.GetLegalMovements()
 	nMoves = len(moveList)
 
 	for i = 0; i < nMoves; i++ {
-		b.MakeMovement(moveList[i])
-		nodes += b.Perft(initialDepth, depth-1, moveList[i].ToAlgebraic(), positionVerbose)
-		b.UndoMovement(moveList[i])
+		g.MakeMovement(moveList[i])
+		nodes += g.Perft(initialDepth, depth-1, moveList[i].ToAlgebraic(), positionVerbose)
+		g.UndoMovement(moveList[i])
 	}
 
 	if positionVerbose && depth == initialDepth-1 && currentMove != "" {
 		fmt.Printf("\t%s: %d\n", currentMove, nodes)
-		fmt.Println(b.ToFen())
+		fmt.Println(g.CurrentPosition.ToFen())
 	}
 
 	return nodes
@@ -46,13 +46,14 @@ func RunPerftTest(perftTest PerftTest, outputMode string, positionVerbose bool) 
 		fmt.Printf("\tFen: '%s'\n", perftTest.fen)
 		fmt.Println("\tResults:")
 	}
-	board := NewBoardFromFen(perftTest.fen)
+
+	game := NewGame(perftTest.fen)
 
 	testBegin := time.Now()
 
 	for depth := 1; depth <= perftTest.maxDepth; depth++ {
 		currentDepthBegin := time.Now()
-		result := board.Perft(depth, depth, "", positionVerbose)
+		result := game.Perft(depth, depth, "", positionVerbose)
 		currentDepthSpentMs := time.Now().Sub(currentDepthBegin).Milliseconds()
 
 		if outputMode != "short" {

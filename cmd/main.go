@@ -30,7 +30,7 @@ func init() {
 	// 	http.ListenAndServe("localhost:8080", nil)
 	// }() // PProf
 
-	// engine.RunPerftsFromEpdFile("perftsuite_a.epd", "short", 4)
+	//engine.RunPerftsFromEpdFile("perft_tests/perftsuite_a.epd", "short", 5)
 
 	rl.InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Chess game")
 	rl.SetTargetFPS(60)
@@ -39,7 +39,8 @@ func init() {
 }
 
 func main() {
-	board := engine.NewStartingBoard()
+	game := engine.NewGame("")
+	//board := engine.NewStartingBoard()
 
 	var activePoint *engine.Point = nil
 	var lastMovement *engine.Movement = nil
@@ -47,7 +48,8 @@ func main() {
 	for !rl.WindowShouldClose() {
 		currentMovements := []engine.Movement{}
 		if activePoint != nil {
-			currentMovements = board.GetLegalMovements(board.PlayerToMove)
+			currentMovements = game.GetLegalMovements()
+			//currentMovements = board.GetLegalMovements(board.PlayerToMove)
 			//currentMovements = board.GetPseudoMovements(board.PlayerToMove)
 		}
 		//currentMovements := board.GetLegalMovements()
@@ -62,7 +64,7 @@ func main() {
 					if movement.From.I == activePoint.I && movement.From.J == activePoint.J {
 						if movement.To.I == i && movement.To.J == j {
 							clickedAMovement = true
-							board.MakeMovement(movement)
+							game.MakeMovement(movement)
 							lastMovement = &movement
 							activePoint = nil
 							break
@@ -72,7 +74,7 @@ func main() {
 			}
 
 			if !clickedAMovement && i >= 0 && j >= 0 && i < 8 && j < 8 {
-				if board.GetPieceAt(i, j).Kind == engine.Kind_None {
+				if game.GetPieceAt(i, j).Kind == engine.Kind_None {
 					activePoint = nil
 				} else {
 					newActivePoint := engine.NewPoint(i, j)
@@ -83,16 +85,17 @@ func main() {
 
 		if rl.IsKeyPressed(rl.KeyU) {
 			if lastMovement != nil {
-				board.UndoMovement(*lastMovement)
+				game.UndoMovement(*lastMovement)
 				lastMovement = nil
 			}
 		}
 
 		if rl.IsKeyPressed(rl.KeyT) {
-			if board.PlayerToMove == engine.Color_White {
-				board.PlayerToMove = engine.Color_Black
+			// For debug purposes (TODO: Remove this)
+			if game.GetPlayerToMove() == engine.Color_White {
+				game.ForceSetPlayerToMove(engine.Color_Black)
 			} else {
-				board.PlayerToMove = engine.Color_White
+				game.ForceSetPlayerToMove(engine.Color_White)
 			}
 		}
 
@@ -114,8 +117,8 @@ func main() {
 
 				rl.DrawRectangle(j*CELL_SIZE, i*CELL_SIZE, CELL_SIZE, CELL_SIZE, cellColor)
 
-				if board.Data[i][j].Kind != engine.Kind_None {
-					currentPiece := board.Data[i][j]
+				if game.GetPieceAt(int(i), int(j)).Kind != engine.Kind_None {
+					currentPiece := game.GetPieceAt(int(i), int(j))
 					rl.DrawTexture(engine.GetPieceTexture(currentPiece.Color, currentPiece.Kind), j*CELL_SIZE, i*CELL_SIZE, rl.RayWhite)
 				}
 			}
@@ -144,26 +147,26 @@ func main() {
 		// totalMovements := len(board.GetLegalMovements(board.PlayerToMove))
 		// fmt.Printf("\n##### TOTAL MOVEMENTS NOW: %d #####\n\n", totalMovements)
 
-		// Draw team information
+		// Draw team information [[ Debug purposes. TODO: Remove ]]
 		drawPlayerInformation := func(xPos int32, color engine.Color) {
 			rl.DrawText(fmt.Sprintf("Player %c", color.ToRune()), xPos+5, SCREEN_HEIGHT-BOTTOM_BAR+2, 20, rl.RayWhite)
 			rl.DrawText(
-				fmt.Sprintf("-Can queen castle: %t", board.CanQueenCastling[color]),
+				fmt.Sprintf("-Can queen castle: %t", game.CurrentPosition.Status.CanQueenCastling[color]),
 				xPos+5, SCREEN_HEIGHT-BOTTOM_BAR+2+20,
 				16,
 				func() rl.Color {
-					if board.CanQueenCastling[color] {
+					if game.CurrentPosition.Status.CanQueenCastling[color] {
 						return rl.DarkGreen
 					}
 					return rl.Maroon
 				}(),
 			)
 			rl.DrawText(
-				fmt.Sprintf("-Can king castle: %t", board.CanKingCastling[color]),
+				fmt.Sprintf("-Can king castle: %t", game.CurrentPosition.Status.CanKingCastling[color]),
 				xPos+5, SCREEN_HEIGHT-BOTTOM_BAR+2+20+16,
 				16,
 				func() rl.Color {
-					if board.CanKingCastling[color] {
+					if game.CurrentPosition.Status.CanKingCastling[color] {
 						return rl.DarkGreen
 					}
 					return rl.Maroon
@@ -175,19 +178,19 @@ func main() {
 		drawPlayerInformation(300, engine.Color_Black)
 
 		rl.DrawText(
-			fmt.Sprintf("En passant: %t", board.EnPassant != nil),
+			fmt.Sprintf("En passant: %t", game.CurrentPosition.Status.EnPassant != nil),
 			600+5, SCREEN_HEIGHT-BOTTOM_BAR+2,
 			16,
 			func() rl.Color {
-				if board.EnPassant != nil {
+				if game.CurrentPosition.Status.EnPassant != nil {
 					return rl.DarkGreen
 				}
 				return rl.Maroon
 			}(),
 		)
-		if board.EnPassant != nil {
+		if game.CurrentPosition.Status.EnPassant != nil {
 			rl.DrawText(
-				fmt.Sprintf("{i: %d, j: %d}", board.EnPassant.I, board.EnPassant.J),
+				fmt.Sprintf("{i: %d, j: %d}", game.CurrentPosition.Status.EnPassant.I, game.CurrentPosition.Status.EnPassant.J),
 				600+5, SCREEN_HEIGHT-BOTTOM_BAR+2+16,
 				16,
 				rl.DarkGreen,
@@ -195,7 +198,7 @@ func main() {
 		}
 
 		rl.DrawText(
-			fmt.Sprintf("Turn color: %c", board.PlayerToMove.ToRune()),
+			fmt.Sprintf("Turn color: %c", game.CurrentPosition.Status.PlayerToMove.ToRune()),
 			600+5, SCREEN_HEIGHT-BOTTOM_BAR+2+20,
 			16,
 			rl.RayWhite,
