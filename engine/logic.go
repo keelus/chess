@@ -1,8 +1,8 @@
 package engine
 
-func (p *Position) GetLegalMovements(color Color) []Movement {
-	pseudoMovements := p.GetPseudoMovements(color)
-	legalMovements := p.FilterPseudoMovements(&pseudoMovements)
+func (g *Game) GetLegalMovements() []Movement {
+	pseudoMovements := g.CurrentPosition.GetPseudoMovements(g.CurrentPosition.Status.PlayerToMove)
+	legalMovements := g.FilterPseudoMovements(&pseudoMovements)
 	//fmt.Printf("Pseudo vs legal: %d vs %d\n", len(pseudoMovements), len(legalMovements))
 	return legalMovements
 }
@@ -51,29 +51,29 @@ func (p Position) GetPiecePseudoMovements(piece Piece, movements *[]Movement) {
 							*NewMovement(piece,
 								piece.Point,
 								NewPoint(finalI, finalJ),
-								p.Status.EnPassant,
-								p.Status.CanQueenCastling[Color_White],
-								p.Status.CanKingCastling[Color_White],
-								p.Status.CanQueenCastling[Color_Black],
-								p.Status.CanKingCastling[Color_Black],
+								// p.Status.EnPassant,
+								// p.Status.CanQueenCastling[Color_White],
+								// p.Status.CanKingCastling[Color_White],
+								// p.Status.CanQueenCastling[Color_Black],
+								// p.Status.CanKingCastling[Color_Black],
 							))
 					} else if pieceAt.Color != piece.Color {
 						*movements = append(*movements,
 							*NewMovement(piece,
 								piece.Point,
 								NewPoint(finalI, finalJ),
-								p.Status.EnPassant,
-								p.Status.CanQueenCastling[Color_White],
-								p.Status.CanKingCastling[Color_White],
-								p.Status.CanQueenCastling[Color_Black],
-								p.Status.CanKingCastling[Color_Black],
+								// p.Status.EnPassant,
+								// p.Status.CanQueenCastling[Color_White],
+								// p.Status.CanKingCastling[Color_White],
+								// p.Status.CanQueenCastling[Color_Black],
+								// p.Status.CanKingCastling[Color_Black],
 							).WithTakingPiece(pieceAt))
 					}
 				}
 			}
 		}
 
-		if p.Status.CanQueenCastling[piece.Color] {
+		if p.Status.CastlingRights.CanQueenCastling(piece.Color) {
 			// Check if space to rook is empty
 			canCastle := true
 			for j := piece.Point.J - 1; j >= piece.Point.J-3; j-- {
@@ -88,17 +88,17 @@ func (p Position) GetPiecePseudoMovements(piece Piece, movements *[]Movement) {
 					*NewMovement(piece,
 						piece.Point,
 						NewPoint(piece.Point.I, piece.Point.J-2),
-						p.Status.EnPassant,
-						p.Status.CanQueenCastling[Color_White],
-						p.Status.CanKingCastling[Color_White],
-						p.Status.CanQueenCastling[Color_Black],
-						p.Status.CanKingCastling[Color_Black],
+						// p.Status.EnPassant,
+						// p.Status.CanQueenCastling[Color_White],
+						// p.Status.CanKingCastling[Color_White],
+						// p.Status.CanQueenCastling[Color_Black],
+						// p.Status.CanKingCastling[Color_Black],
 					).WithCastling(true, false))
 			}
 
 		}
 
-		if p.Status.CanKingCastling[piece.Color] {
+		if p.Status.CastlingRights.CanKingCastling(piece.Color) {
 			// Check if space to rook is empty
 			canCastle := true
 			for j := piece.Point.J + 1; j < 7; j++ {
@@ -113,11 +113,11 @@ func (p Position) GetPiecePseudoMovements(piece Piece, movements *[]Movement) {
 					*NewMovement(piece,
 						piece.Point,
 						NewPoint(piece.Point.I, piece.Point.J+2),
-						p.Status.EnPassant,
-						p.Status.CanQueenCastling[Color_White],
-						p.Status.CanKingCastling[Color_White],
-						p.Status.CanQueenCastling[Color_Black],
-						p.Status.CanKingCastling[Color_Black],
+						// p.Status.EnPassant,
+						// p.Status.CanQueenCastling[Color_White],
+						// p.Status.CanKingCastling[Color_White],
+						// p.Status.CanQueenCastling[Color_Black],
+						// p.Status.CanKingCastling[Color_Black],
 					).WithCastling(false, true))
 			}
 
@@ -138,22 +138,22 @@ func (p Position) GetPiecePseudoMovements(piece Piece, movements *[]Movement) {
 						*NewMovement(piece,
 							piece.Point,
 							NewPoint(finalI, finalJ),
-							p.Status.EnPassant,
-							p.Status.CanQueenCastling[Color_White],
-							p.Status.CanKingCastling[Color_White],
-							p.Status.CanQueenCastling[Color_Black],
-							p.Status.CanKingCastling[Color_Black],
+							// p.Status.EnPassant,
+							// p.Status.CanQueenCastling[Color_White],
+							// p.Status.CanKingCastling[Color_White],
+							// p.Status.CanQueenCastling[Color_Black],
+							// p.Status.CanKingCastling[Color_Black],
 						))
 				} else if pieceAt.Color != piece.Color {
 					*movements = append(*movements,
 						*NewMovement(piece,
 							piece.Point,
 							NewPoint(finalI, finalJ),
-							p.Status.EnPassant,
-							p.Status.CanQueenCastling[Color_White],
-							p.Status.CanKingCastling[Color_White],
-							p.Status.CanQueenCastling[Color_Black],
-							p.Status.CanKingCastling[Color_Black],
+							// p.Status.EnPassant,
+							// p.Status.CanQueenCastling[Color_White],
+							// p.Status.CanKingCastling[Color_White],
+							// p.Status.CanQueenCastling[Color_Black],
+							// p.Status.CanKingCastling[Color_Black],
 						).WithTakingPiece(pieceAt))
 				}
 			}
@@ -194,11 +194,11 @@ func (p Position) GetPiecePseudoMovements(piece Piece, movements *[]Movement) {
 							*NewMovement(piece,
 								piece.Point,
 								NewPoint(finalI, piece.Point.J),
-								p.Status.EnPassant,
-								p.Status.CanQueenCastling[Color_White],
-								p.Status.CanKingCastling[Color_White],
-								p.Status.CanQueenCastling[Color_Black],
-								p.Status.CanKingCastling[Color_Black],
+								// p.Status.EnPassant,
+								// p.Status.CanQueenCastling[Color_White],
+								// p.Status.CanKingCastling[Color_White],
+								// p.Status.CanQueenCastling[Color_Black],
+								// p.Status.CanKingCastling[Color_Black],
 							).WithPawn(i == -2, false).WithPawnPromotion(kind))
 					}
 				} else {
@@ -206,11 +206,11 @@ func (p Position) GetPiecePseudoMovements(piece Piece, movements *[]Movement) {
 						*NewMovement(piece,
 							piece.Point,
 							NewPoint(finalI, piece.Point.J),
-							p.Status.EnPassant,
-							p.Status.CanQueenCastling[Color_White],
-							p.Status.CanKingCastling[Color_White],
-							p.Status.CanQueenCastling[Color_Black],
-							p.Status.CanKingCastling[Color_Black],
+							// p.Status.EnPassant,
+							// p.Status.CanQueenCastling[Color_White],
+							// p.Status.CanKingCastling[Color_White],
+							// p.Status.CanQueenCastling[Color_Black],
+							// p.Status.CanKingCastling[Color_Black],
 						).WithPawn(i == -2, false))
 				}
 			}
@@ -232,11 +232,11 @@ func (p Position) GetPiecePseudoMovements(piece Piece, movements *[]Movement) {
 								*NewMovement(piece,
 									piece.Point,
 									NewPoint(finalI, finalJ),
-									p.Status.EnPassant,
-									p.Status.CanQueenCastling[Color_White],
-									p.Status.CanKingCastling[Color_White],
-									p.Status.CanQueenCastling[Color_Black],
-									p.Status.CanKingCastling[Color_Black],
+									// p.Status.EnPassant,
+									// p.Status.CanQueenCastling[Color_White],
+									// p.Status.CanKingCastling[Color_White],
+									// p.Status.CanQueenCastling[Color_Black],
+									// p.Status.CanKingCastling[Color_Black],
 								).WithTakingPiece(pieceAt).WithPawn(false, false).WithPawnPromotion(kind))
 						}
 					} else {
@@ -244,11 +244,11 @@ func (p Position) GetPiecePseudoMovements(piece Piece, movements *[]Movement) {
 							*NewMovement(piece,
 								piece.Point,
 								NewPoint(finalI, finalJ),
-								p.Status.EnPassant,
-								p.Status.CanQueenCastling[Color_White],
-								p.Status.CanKingCastling[Color_White],
-								p.Status.CanQueenCastling[Color_Black],
-								p.Status.CanKingCastling[Color_Black],
+								// p.Status.EnPassant,
+								// p.Status.CanQueenCastling[Color_White],
+								// p.Status.CanKingCastling[Color_White],
+								// p.Status.CanQueenCastling[Color_Black],
+								// p.Status.CanKingCastling[Color_Black],
 							).WithTakingPiece(pieceAt).WithPawn(false, false))
 					}
 				} else {
@@ -256,11 +256,11 @@ func (p Position) GetPiecePseudoMovements(piece Piece, movements *[]Movement) {
 						*NewMovement(piece,
 							piece.Point,
 							NewPoint(finalI, finalJ),
-							p.Status.EnPassant,
-							p.Status.CanQueenCastling[Color_White],
-							p.Status.CanKingCastling[Color_White],
-							p.Status.CanQueenCastling[Color_Black],
-							p.Status.CanKingCastling[Color_Black],
+							// p.Status.EnPassant,
+							// p.Status.CanQueenCastling[Color_White],
+							// p.Status.CanKingCastling[Color_White],
+							// p.Status.CanQueenCastling[Color_Black],
+							// p.Status.CanKingCastling[Color_Black],
 						).WithPawn(false, true))
 				}
 
@@ -276,11 +276,11 @@ func (p Position) GetPiecePseudoMovements(piece Piece, movements *[]Movement) {
 						*NewMovement(piece,
 							piece.Point,
 							NewPoint(finalI, finalJ),
-							p.Status.EnPassant,
-							p.Status.CanQueenCastling[Color_White],
-							p.Status.CanKingCastling[Color_White],
-							p.Status.CanQueenCastling[Color_Black],
-							p.Status.CanKingCastling[Color_Black],
+							// p.Status.EnPassant,
+							// p.Status.CanQueenCastling[Color_White],
+							// p.Status.CanKingCastling[Color_White],
+							// p.Status.CanQueenCastling[Color_Black],
+							// p.Status.CanKingCastling[Color_Black],
 						).WithTakingPiece(pieceAt).WithPawn(false, false))
 				}
 			}
@@ -304,11 +304,11 @@ func (p Position) getOrthogonalPseudoMovements(piece Piece, movements *[]Movemen
 					*NewMovement(piece,
 						piece.Point,
 						NewPoint(i, j),
-						p.Status.EnPassant,
-						p.Status.CanQueenCastling[Color_White],
-						p.Status.CanKingCastling[Color_White],
-						p.Status.CanQueenCastling[Color_Black],
-						p.Status.CanKingCastling[Color_Black],
+						// p.Status.EnPassant,
+						// p.Status.CanQueenCastling[Color_White],
+						// p.Status.CanKingCastling[Color_White],
+						// p.Status.CanQueenCastling[Color_Black],
+						// p.Status.CanKingCastling[Color_Black],
 					))
 			} else {
 				if pieceAt.Color != piece.Color {
@@ -316,11 +316,11 @@ func (p Position) getOrthogonalPseudoMovements(piece Piece, movements *[]Movemen
 						*NewMovement(piece,
 							piece.Point,
 							NewPoint(i, j),
-							p.Status.EnPassant,
-							p.Status.CanQueenCastling[Color_White],
-							p.Status.CanKingCastling[Color_White],
-							p.Status.CanQueenCastling[Color_Black],
-							p.Status.CanKingCastling[Color_Black],
+							// p.Status.EnPassant,
+							// p.Status.CanQueenCastling[Color_White],
+							// p.Status.CanKingCastling[Color_White],
+							// p.Status.CanQueenCastling[Color_Black],
+							// p.Status.CanKingCastling[Color_Black],
 						).WithTakingPiece(pieceAt))
 				}
 
@@ -344,11 +344,11 @@ func (p Position) getDiagonalPseudoMovements(piece Piece, movements *[]Movement)
 					*NewMovement(piece,
 						piece.Point,
 						NewPoint(i, j),
-						p.Status.EnPassant,
-						p.Status.CanQueenCastling[Color_White],
-						p.Status.CanKingCastling[Color_White],
-						p.Status.CanQueenCastling[Color_Black],
-						p.Status.CanKingCastling[Color_Black],
+						// p.Status.EnPassant,
+						// p.Status.CanQueenCastling[Color_White],
+						// p.Status.CanKingCastling[Color_White],
+						// p.Status.CanQueenCastling[Color_Black],
+						// p.Status.CanKingCastling[Color_Black],
 					))
 			} else {
 				if pieceAt.Color != piece.Color {
@@ -356,11 +356,11 @@ func (p Position) getDiagonalPseudoMovements(piece Piece, movements *[]Movement)
 						*NewMovement(piece,
 							piece.Point,
 							NewPoint(i, j),
-							p.Status.EnPassant,
-							p.Status.CanQueenCastling[Color_White],
-							p.Status.CanKingCastling[Color_White],
-							p.Status.CanQueenCastling[Color_Black],
-							p.Status.CanKingCastling[Color_Black],
+							// p.Status.EnPassant,
+							// p.Status.CanQueenCastling[Color_White],
+							// p.Status.CanKingCastling[Color_White],
+							// p.Status.CanQueenCastling[Color_Black],
+							// p.Status.CanKingCastling[Color_Black],
 						).WithTakingPiece(pieceAt))
 				}
 

@@ -13,21 +13,20 @@ type Movement struct {
 	// Next variables refer to the state before this movement have been done
 	PawnIsDoublePointMovement           *bool
 	PawnIsAttackingButNotTakingDiagonal *bool
+	PawnPromotionTo                     *Kind
 
 	IsKingSideCastling  *bool
 	IsQueenSideCastling *bool
 
-	CanWhiteQueenSideCastling bool
-	CanWhiteKingSideCastling  bool
-	CanBlackQueenSideCastling bool
-	CanBlackKingSideCastling  bool
+	// CanWhiteQueenSideCastling bool
+	// CanWhiteKingSideCastling  bool
+	// CanBlackQueenSideCastling bool
+	// CanBlackKingSideCastling  bool
 
-	// CanKingSideCastling  bool // TODO: These two only in castle or King moves
-	// CanQueenSideCastling bool
+	// // CanKingSideCastling  bool // TODO: These two only in castle or King moves
+	// // CanQueenSideCastling bool
 
-	EnPassant *Point
-
-	PawnPromotionTo *Kind
+	// EnPassant *Point
 
 	// TODO: To later UNDO a Movement, might be necessary to add more parameters (such as Castling abilities)
 }
@@ -55,18 +54,18 @@ func (m *Movement) WithCastling(isQueenSideMove, isKingSideMove bool) *Movement 
 	return m
 }
 
-func NewMovement(movingPiece Piece, from, to Point, enPassant *Point, canWhiteQueenSideCastling, canWhiteKingSideCastling, canBlackQueenSideCastling, canBlackKingSideCastling bool) *Movement {
+func NewMovement(movingPiece Piece, from, to Point /*, enPassant *Point, canWhiteQueenSideCastling, canWhiteKingSideCastling, canBlackQueenSideCastling, canBlackKingSideCastling bool*/) *Movement {
 	return &Movement{
 		MovingPiece:   movingPiece,
 		IsTakingPiece: false,
 		From:          from,
 		To:            to,
-		EnPassant:     enPassant,
+		// EnPassant:     enPassant,
 
-		CanWhiteQueenSideCastling: canWhiteQueenSideCastling,
-		CanWhiteKingSideCastling:  canWhiteKingSideCastling,
-		CanBlackQueenSideCastling: canBlackQueenSideCastling,
-		CanBlackKingSideCastling:  canBlackKingSideCastling,
+		// CanWhiteQueenSideCastling: canWhiteQueenSideCastling,
+		// CanWhiteKingSideCastling:  canWhiteKingSideCastling,
+		// CanBlackQueenSideCastling: canBlackQueenSideCastling,
+		// CanBlackKingSideCastling:  canBlackKingSideCastling,
 		// CanQueenSideCastling: canQueenSideCastling,
 		// CanKingSideCastling:  canKingSideCastling,
 	}

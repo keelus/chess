@@ -30,7 +30,7 @@ func init() {
 	// 	http.ListenAndServe("localhost:8080", nil)
 	// }() // PProf
 
-	//engine.RunPerftsFromEpdFile("perft_tests/perftsuite_a.epd", "short", 5)
+	//engine.RunPerftsFromEpdFile("perft_tests/perftsuite_a.epd", "short", 4)
 
 	rl.InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Chess game")
 	rl.SetTargetFPS(60)
@@ -43,7 +43,7 @@ func main() {
 	//board := engine.NewStartingBoard()
 
 	var activePoint *engine.Point = nil
-	var lastMovement *engine.Movement = nil
+	//var lastMovement *engine.Movement = nil
 
 	for !rl.WindowShouldClose() {
 		currentMovements := []engine.Movement{}
@@ -65,7 +65,7 @@ func main() {
 						if movement.To.I == i && movement.To.J == j {
 							clickedAMovement = true
 							game.MakeMovement(movement)
-							lastMovement = &movement
+							//lastMovement = &movement
 							activePoint = nil
 							break
 						}
@@ -84,10 +84,7 @@ func main() {
 		}
 
 		if rl.IsKeyPressed(rl.KeyU) {
-			if lastMovement != nil {
-				game.UndoMovement(*lastMovement)
-				lastMovement = nil
-			}
+			game.UndoMovement()
 		}
 
 		if rl.IsKeyPressed(rl.KeyT) {
@@ -151,22 +148,22 @@ func main() {
 		drawPlayerInformation := func(xPos int32, color engine.Color) {
 			rl.DrawText(fmt.Sprintf("Player %c", color.ToRune()), xPos+5, SCREEN_HEIGHT-BOTTOM_BAR+2, 20, rl.RayWhite)
 			rl.DrawText(
-				fmt.Sprintf("-Can queen castle: %t", game.CurrentPosition.Status.CanQueenCastling[color]),
+				fmt.Sprintf("-Can queen castle: %t", game.CurrentPosition.Status.CastlingRights.CanQueenCastling(color)),
 				xPos+5, SCREEN_HEIGHT-BOTTOM_BAR+2+20,
 				16,
 				func() rl.Color {
-					if game.CurrentPosition.Status.CanQueenCastling[color] {
+					if game.CurrentPosition.Status.CastlingRights.CanQueenCastling(color) {
 						return rl.DarkGreen
 					}
 					return rl.Maroon
 				}(),
 			)
 			rl.DrawText(
-				fmt.Sprintf("-Can king castle: %t", game.CurrentPosition.Status.CanKingCastling[color]),
+				fmt.Sprintf("-Can king castle: %t", game.CurrentPosition.Status.CastlingRights.CanKingCastling(color)),
 				xPos+5, SCREEN_HEIGHT-BOTTOM_BAR+2+20+16,
 				16,
 				func() rl.Color {
-					if game.CurrentPosition.Status.CanKingCastling[color] {
+					if game.CurrentPosition.Status.CastlingRights.CanKingCastling(color) {
 						return rl.DarkGreen
 					}
 					return rl.Maroon

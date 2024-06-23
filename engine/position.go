@@ -11,11 +11,49 @@ type Position struct {
 	Status PositionStatus
 }
 
+type CastlingRights struct {
+	CanWhiteKingCastle  bool
+	CanWhiteQueenCastle bool
+	CanBlackKingCastle  bool
+	CanBlackQueenCastle bool
+}
+
+func (c CastlingRights) CanQueenCastling(color Color) bool {
+	if color == Color_White {
+		return c.CanWhiteQueenCastle
+	}
+	return c.CanBlackQueenCastle
+}
+
+func (c CastlingRights) CanKingCastling(color Color) bool {
+	if color == Color_White {
+		return c.CanWhiteKingCastle
+	}
+	return c.CanBlackKingCastle
+}
+
+func (c *CastlingRights) SetQueenCastling(color Color, canCastling bool) {
+	if color == Color_White {
+		c.CanWhiteQueenCastle = canCastling
+	} else {
+		c.CanBlackQueenCastle = canCastling
+	}
+}
+
+func (c *CastlingRights) SetKingCastling(color Color, canCastling bool) {
+	if color == Color_White {
+		c.CanWhiteKingCastle = canCastling
+	} else {
+		c.CanBlackKingCastle = canCastling
+	}
+}
+
 type PositionStatus struct {
 	PlayerToMove Color
 
-	CanKingCastling  map[Color]bool
-	CanQueenCastling map[Color]bool
+	CastlingRights CastlingRights
+	// CanKingCastling  map[Color]bool
+	// CanQueenCastling map[Color]bool
 
 	EnPassant *Point
 }
@@ -31,14 +69,21 @@ func NewPositionFromFen(fen string) Position {
 		Status: PositionStatus{
 			PlayerToMove: parsedFen.ActiveColor,
 
-			CanKingCastling: map[Color]bool{
-				Color_White: parsedFen.WhiteCanKingSideCastling,
-				Color_Black: parsedFen.BlackCanKingSideCastling,
+			CastlingRights: CastlingRights{
+				CanWhiteQueenCastle: parsedFen.WhiteCanQueenSideCastling,
+				CanWhiteKingCastle:  parsedFen.WhiteCanKingSideCastling,
+
+				CanBlackQueenCastle: parsedFen.BlackCanQueenSideCastling,
+				CanBlackKingCastle:  parsedFen.BlackCanKingSideCastling,
 			},
-			CanQueenCastling: map[Color]bool{
-				Color_White: parsedFen.WhiteCanQueenSideCastling,
-				Color_Black: parsedFen.BlackCanQueenSideCastling,
-			},
+			// CanKingCastling: map[Color]bool{
+			// 	Color_White: parsedFen.WhiteCanKingSideCastling,
+			// 	Color_Black: parsedFen.BlackCanKingSideCastling,
+			// },
+			// CanQueenCastling: map[Color]bool{
+			// 	Color_White: parsedFen.WhiteCanQueenSideCastling,
+			// 	Color_Black: parsedFen.BlackCanQueenSideCastling,
+			// },
 
 			EnPassant: nil, //TODO
 		},
@@ -46,13 +91,18 @@ func NewPositionFromFen(fen string) Position {
 }
 
 // Suppose is legal
-func (p *Position) MakeMovement(movement Movement) {
+func (g *Game) MakeMovement(movement Movement) {
+	newPosition := Position{
+		Board:  g.CurrentPosition.Board,
+		Status: g.CurrentPosition.Status,
+	}
+
 	//fmt.Printf("Do: %s\n", movement.ToString())
-	p.Status.EnPassant = nil
+	newPosition.Status.EnPassant = nil
 
 	if movement.IsQueenSideCastling != nil || movement.IsKingSideCastling != nil { // Handle castling
-		p.Status.CanQueenCastling[movement.MovingPiece.Color] = false
-		p.Status.CanKingCastling[movement.MovingPiece.Color] = false
+		newPosition.Status.CastlingRights.SetQueenCastling(movement.MovingPiece.Color, false)
+		newPosition.Status.CastlingRights.SetKingCastling(movement.MovingPiece.Color, false)
 
 		castlingRow := 7
 		if movement.MovingPiece.Color == Color_Black {
@@ -64,43 +114,43 @@ func (p *Position) MakeMovement(movement Movement) {
 		// IF DOING THIS, WE HAVE TO SAVE ALSO CASTLING POSITION
 
 		if *movement.IsQueenSideCastling {
-			rookPiece := p.Board[castlingRow][0]
-			kingPiece := p.Board[castlingRow][4]
+			rookPiece := newPosition.Board[castlingRow][0]
+			kingPiece := newPosition.Board[castlingRow][4]
 
 			// Set new rook
-			p.Board[castlingRow][3].Kind = rookPiece.Kind
-			p.Board[castlingRow][3].Color = rookPiece.Color
+			newPosition.Board[castlingRow][3].Kind = rookPiece.Kind
+			newPosition.Board[castlingRow][3].Color = rookPiece.Color
 
 			// Delete old rook
-			p.Board[castlingRow][0].Kind = Kind_None
-			p.Board[castlingRow][0].Color = Color_None
+			newPosition.Board[castlingRow][0].Kind = Kind_None
+			newPosition.Board[castlingRow][0].Color = Color_None
 
 			// Set new king
-			p.Board[castlingRow][2].Kind = kingPiece.Kind
-			p.Board[castlingRow][2].Color = kingPiece.Color
+			newPosition.Board[castlingRow][2].Kind = kingPiece.Kind
+			newPosition.Board[castlingRow][2].Color = kingPiece.Color
 
 			// Delete old king
-			p.Board[castlingRow][4].Kind = Kind_None
-			p.Board[castlingRow][4].Color = Color_None
+			newPosition.Board[castlingRow][4].Kind = Kind_None
+			newPosition.Board[castlingRow][4].Color = Color_None
 		} else if *movement.IsKingSideCastling {
-			rookPiece := p.Board[castlingRow][7]
-			kingPiece := p.Board[castlingRow][4]
+			rookPiece := newPosition.Board[castlingRow][7]
+			kingPiece := newPosition.Board[castlingRow][4]
 
 			// Set new rook
-			p.Board[castlingRow][5].Kind = rookPiece.Kind
-			p.Board[castlingRow][5].Color = rookPiece.Color
+			newPosition.Board[castlingRow][5].Kind = rookPiece.Kind
+			newPosition.Board[castlingRow][5].Color = rookPiece.Color
 
 			// Delete old rook
-			p.Board[castlingRow][7].Kind = Kind_None
-			p.Board[castlingRow][7].Color = Color_None
+			newPosition.Board[castlingRow][7].Kind = Kind_None
+			newPosition.Board[castlingRow][7].Color = Color_None
 
 			// Set new king
-			p.Board[castlingRow][6].Kind = kingPiece.Kind
-			p.Board[castlingRow][6].Color = kingPiece.Color
+			newPosition.Board[castlingRow][6].Kind = kingPiece.Kind
+			newPosition.Board[castlingRow][6].Color = kingPiece.Color
 
 			// Delete old king
-			p.Board[castlingRow][4].Kind = Kind_None
-			p.Board[castlingRow][4].Color = Color_None
+			newPosition.Board[castlingRow][4].Kind = Kind_None
+			newPosition.Board[castlingRow][4].Color = Color_None
 		}
 	} else {
 		if movement.MovingPiece.Kind == Kind_Pawn {
@@ -113,49 +163,49 @@ func (p *Position) MakeMovement(movement Movement) {
 				}
 
 				newEnPassantPoint := NewPoint(movement.From.I+invertSum, movement.From.J)
-				p.Status.EnPassant = &newEnPassantPoint
+				newPosition.Status.EnPassant = &newEnPassantPoint
 			}
 		} else if movement.MovingPiece.Kind == Kind_King {
-			p.Status.CanQueenCastling[movement.MovingPiece.Color] = false
-			p.Status.CanKingCastling[movement.MovingPiece.Color] = false
+			newPosition.Status.CastlingRights.SetQueenCastling(movement.MovingPiece.Color, false)
+			newPosition.Status.CastlingRights.SetKingCastling(movement.MovingPiece.Color, false)
 		} else if movement.MovingPiece.Kind == Kind_Rook {
 			// Check if currently moving rook is from queen or king side
-			if p.Status.CanQueenCastling[movement.MovingPiece.Color] {
+			if newPosition.Status.CastlingRights.CanQueenCastling(movement.MovingPiece.Color) {
 				if movement.MovingPiece.Point.J == 0 {
-					p.Status.CanQueenCastling[movement.MovingPiece.Color] = false
+					newPosition.Status.CastlingRights.SetQueenCastling(movement.MovingPiece.Color, false)
 				}
 			}
-			if p.Status.CanKingCastling[movement.MovingPiece.Color] {
+			if newPosition.Status.CastlingRights.CanKingCastling(movement.MovingPiece.Color) {
 				if movement.MovingPiece.Point.J == 7 {
-					p.Status.CanKingCastling[movement.MovingPiece.Color] = false
+					newPosition.Status.CastlingRights.SetKingCastling(movement.MovingPiece.Color, false)
 				}
 			}
 		}
 
 		if movement.IsTakingPiece {
 			// Do it this wad, so it's en passant compatible
-			p.Board[movement.TakingPiece.Point.I][movement.TakingPiece.Point.J].Kind = Kind_None
-			p.Board[movement.TakingPiece.Point.I][movement.TakingPiece.Point.J].Color = Color_None
+			newPosition.Board[movement.TakingPiece.Point.I][movement.TakingPiece.Point.J].Kind = Kind_None
+			newPosition.Board[movement.TakingPiece.Point.I][movement.TakingPiece.Point.J].Color = Color_None
 
 			if movement.TakingPiece.Kind == Kind_Rook {
-				if p.Status.CanQueenCastling[movement.TakingPiece.Color] {
+				if newPosition.Status.CastlingRights.CanQueenCastling(movement.TakingPiece.Color) {
 					castlingRow := 7
 					if movement.TakingPiece.Color == Color_Black {
 						castlingRow = 0
 					}
 
 					if movement.TakingPiece.Point.I == castlingRow && movement.TakingPiece.Point.J == 0 {
-						p.Status.CanQueenCastling[movement.TakingPiece.Color] = false
+						newPosition.Status.CastlingRights.SetQueenCastling(movement.TakingPiece.Color, false)
 					}
 				}
-				if p.Status.CanKingCastling[movement.TakingPiece.Color] {
+				if newPosition.Status.CastlingRights.CanKingCastling(movement.TakingPiece.Color) {
 					castlingRow := 7
 					if movement.TakingPiece.Color == Color_Black {
 						castlingRow = 0
 					}
 
 					if movement.TakingPiece.Point.I == castlingRow && movement.TakingPiece.Point.J == 7 {
-						p.Status.CanKingCastling[movement.TakingPiece.Color] = false
+						newPosition.Status.CastlingRights.SetKingCastling(movement.TakingPiece.Color, false)
 					}
 				}
 			}
@@ -165,101 +215,36 @@ func (p *Position) MakeMovement(movement Movement) {
 		// p.Board[movement.To.I][movement.To.J] = movement.MovingPiece
 		// p.Board[movement.From.I][movement.From.J] = nil
 
-		p.Board[movement.To.I][movement.To.J].Color = movement.MovingPiece.Color
+		newPosition.Board[movement.To.I][movement.To.J].Color = movement.MovingPiece.Color
 		if movement.PawnPromotionTo == nil {
 			// Update data of the new piece
-			p.Board[movement.To.I][movement.To.J].Kind = movement.MovingPiece.Kind
+			newPosition.Board[movement.To.I][movement.To.J].Kind = movement.MovingPiece.Kind
 		} else {
 			// Promote the piece
-			p.Board[movement.To.I][movement.To.J].Kind = *movement.PawnPromotionTo
+			newPosition.Board[movement.To.I][movement.To.J].Kind = *movement.PawnPromotionTo
 		}
 
 		// Delete this piece's previous position
-		p.Board[movement.From.I][movement.From.J].Kind = Kind_None
-		p.Board[movement.From.I][movement.From.J].Color = Color_None
-		p.Board[movement.From.I][movement.From.J].IsPawnFirstMovement = false
+		newPosition.Board[movement.From.I][movement.From.J].Kind = Kind_None
+		newPosition.Board[movement.From.I][movement.From.J].Color = Color_None
+		newPosition.Board[movement.From.I][movement.From.J].IsPawnFirstMovement = false
 	}
 
-	p.Status.PlayerToMove = Color_White
+	newPosition.Status.PlayerToMove = Color_White
 	if movement.MovingPiece.Color == Color_White {
-		p.Status.PlayerToMove = Color_Black
+		newPosition.Status.PlayerToMove = Color_Black
 	}
+
+	g.Positions = append(g.Positions, g.CurrentPosition)
+	g.CurrentPosition = newPosition
 }
 
-func (p *Position) UndoMovement(movement Movement) {
-	//fmt.Printf("Undo: %s\n", movement.ToString())
-
-	// Remove the moved piece
-	p.Board[movement.To.I][movement.To.J].Kind = Kind_None
-	p.Board[movement.To.I][movement.To.J].Color = Color_None
-
-	// Create the moved piece into the old position
-	//p.Board[movement.From.I][movement.From.J] = movement.MovingPiece
-	p.Board[movement.From.I][movement.From.J].Kind = movement.MovingPiece.Kind
-	p.Board[movement.From.I][movement.From.J].Color = movement.MovingPiece.Color
-	p.Board[movement.From.I][movement.From.J].IsPawnFirstMovement = movement.MovingPiece.IsPawnFirstMovement
-	// TODO: THIS
-
-	// Create the taken piece (if aplicable) into the old position
-	if movement.IsTakingPiece {
-		p.Board[movement.TakingPiece.Point.I][movement.TakingPiece.Point.J].Kind = movement.TakingPiece.Kind
-		p.Board[movement.TakingPiece.Point.I][movement.TakingPiece.Point.J].Color = movement.TakingPiece.Color
-		p.Board[movement.TakingPiece.Point.I][movement.TakingPiece.Point.J].IsPawnFirstMovement = movement.TakingPiece.IsPawnFirstMovement
-
-	}
-
-	if movement.IsQueenSideCastling != nil && *movement.IsQueenSideCastling {
-		// Move castle
-		castlingRow := 7
-		if movement.MovingPiece.Color == Color_Black {
-			castlingRow = 0
-		}
-
-		// Delete moved castle
-		p.Board[castlingRow][3].Kind = Kind_None
-		p.Board[castlingRow][3].Color = Color_None
-
-		// Create old castle
-		p.Board[castlingRow][0].Kind = Kind_Rook
-		p.Board[castlingRow][0].Color = movement.MovingPiece.Color
-	} else if movement.IsKingSideCastling != nil && *movement.IsKingSideCastling {
-		// Move castle
-		castlingRow := 7
-		if movement.MovingPiece.Color == Color_Black {
-			castlingRow = 0
-		}
-
-		// Delete moved castle
-		p.Board[castlingRow][5].Kind = Kind_None
-		p.Board[castlingRow][5].Color = Color_None
-
-		// Create old castle
-		p.Board[castlingRow][7].Kind = Kind_Rook
-		p.Board[castlingRow][7].Color = movement.MovingPiece.Color
-	}
-
-	// b.CanQueenCastling[movement.MovingPiece.Color] = movement.CanQueenSideCastling
-	// b.CanKingCastling[movement.MovingPiece.Color] = movement.CanKingSideCastling
-
-	p.Status.CanQueenCastling[Color_White] = movement.CanWhiteQueenSideCastling
-	p.Status.CanKingCastling[Color_White] = movement.CanWhiteKingSideCastling
-	p.Status.CanQueenCastling[Color_Black] = movement.CanBlackQueenSideCastling
-	p.Status.CanKingCastling[Color_Black] = movement.CanBlackKingSideCastling
-
-	p.Status.EnPassant = movement.EnPassant
-
-	p.Status.PlayerToMove = Color_White
-	if movement.MovingPiece.Color == Color_Black {
-		p.Status.PlayerToMove = Color_Black
-	}
-}
-
-func (p *Position) FilterPseudoMovements(movements *[]Movement) []Movement {
+func (g *Game) FilterPseudoMovements(movements *[]Movement) []Movement {
 	//beginningColor := b.PlayerToMove
 	filteredMovements := []Movement{}
 
 	opponentColor := Color_White
-	if p.Status.PlayerToMove == Color_White {
+	if g.CurrentPosition.Status.PlayerToMove == Color_White {
 		opponentColor = Color_Black
 	}
 
@@ -274,7 +259,7 @@ func (p *Position) FilterPseudoMovements(movements *[]Movement) []Movement {
 		isCastlingLegal := true
 		if (myMovement.IsQueenSideCastling != nil && *myMovement.IsQueenSideCastling) ||
 			(myMovement.IsKingSideCastling != nil && *myMovement.IsKingSideCastling) {
-			currentOpponentPseudo := p.GetPseudoMovements(opponentColor)
+			currentOpponentPseudo := g.CurrentPosition.GetPseudoMovements(opponentColor)
 			for _, opponentMovement := range currentOpponentPseudo {
 				if opponentMovement.IsTakingPiece && opponentMovement.TakingPiece.Kind == Kind_King {
 					isCastlingLegal = false
@@ -296,23 +281,24 @@ func (p *Position) FilterPseudoMovements(movements *[]Movement) []Movement {
 				colTo = myMovement.From.J + 2
 			}
 
-			isCastlingLegal = p.CheckForCastlingLegal(myMovement.From.I, colFrom, colTo, currentOpponentPseudo)
+			isCastlingLegal = g.CurrentPosition.CheckForCastlingLegal(myMovement.From.I, colFrom, colTo, currentOpponentPseudo)
 		}
 
 		if !isCastlingLegal {
 			continue
 		}
 
-		p.MakeMovement(myMovement)
-		opponentPseudoMovements := p.GetPseudoMovements(opponentColor)
+		g.MakeMovement(myMovement)
+		opponentPseudoMovements := g.CurrentPosition.GetPseudoMovements(opponentColor)
 
-		weGetChecked := p.CheckForCheck(opponentPseudoMovements)
+		weGetChecked := g.CurrentPosition.CheckForCheck(opponentPseudoMovements)
 
 		if !weGetChecked {
 			filteredMovements = append(filteredMovements, myMovement)
 		}
 		// Check for check
-		p.UndoMovement(myMovement)
+		//g.UndoMovement(myMovement)
+		g.UndoMovement()
 	}
 
 	//endColor := b.PlayerToMove
@@ -382,16 +368,16 @@ func (p Position) ToFen() string {
 
 	dataFen = fmt.Sprintf("%s %c ", dataFen, p.Status.PlayerToMove.ToRune())
 
-	if p.Status.CanKingCastling[Color_White] {
+	if p.Status.CastlingRights.CanKingCastling(Color_White) {
 		dataFen = fmt.Sprintf("%sK", dataFen)
 	}
-	if p.Status.CanQueenCastling[Color_White] {
+	if p.Status.CastlingRights.CanQueenCastling(Color_White) {
 		dataFen = fmt.Sprintf("%sQ", dataFen)
 	}
-	if p.Status.CanKingCastling[Color_Black] {
+	if p.Status.CastlingRights.CanKingCastling(Color_Black) {
 		dataFen = fmt.Sprintf("%sk", dataFen)
 	}
-	if p.Status.CanQueenCastling[Color_Black] {
+	if p.Status.CastlingRights.CanQueenCastling(Color_Black) {
 		dataFen = fmt.Sprintf("%sq", dataFen)
 	}
 

@@ -27,7 +27,8 @@ func (g *Game) Perft(initialDepth, depth int, currentMove string, positionVerbos
 	for i = 0; i < nMoves; i++ {
 		g.MakeMovement(moveList[i])
 		nodes += g.Perft(initialDepth, depth-1, moveList[i].ToAlgebraic(), positionVerbose)
-		g.UndoMovement(moveList[i])
+		//g.UndoMovement(moveList[i])
+		g.UndoMovement()
 	}
 
 	if positionVerbose && depth == initialDepth-1 && currentMove != "" {

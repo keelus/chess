@@ -1,5 +1,7 @@
 package engine
 
+import "fmt"
+
 type Game struct {
 	Positions       []Position
 	CurrentPosition Position
@@ -20,16 +22,14 @@ func NewGame(fen string) Game {
 	}
 }
 
-func (g *Game) GetLegalMovements() []Movement {
-	return g.CurrentPosition.GetLegalMovements(g.CurrentPosition.Status.PlayerToMove)
-}
-
-func (g *Game) MakeMovement(movement Movement) {
-	g.CurrentPosition.MakeMovement(movement)
-}
-
-func (g *Game) UndoMovement(movement Movement) {
-	g.CurrentPosition.UndoMovement(movement)
+func (g *Game) UndoMovement() {
+	if len(g.Positions) == 0 {
+		fmt.Println("Can undo more.")
+		return
+	} else {
+		g.CurrentPosition = g.Positions[len(g.Positions)-1]
+		g.Positions = g.Positions[:len(g.Positions)-1]
+	}
 }
 
 func (g *Game) GetPieceAt(i, j int) Piece {
