@@ -46,7 +46,7 @@ go test -v -epd filename.epd -maxDepth 4 -positionVerbose
 #### Bench
 While inside `engine` folder:
 ```
-go test -bench=. -benchmem -memprofile memprofile.out -cpuprofile profile.out 4 -epd .\perft_tests\filename.epd -maxDepth 4
+go test -v -bench=. -benchmem -memprofile memprofile.out -cpuprofile profile.out 4 -epd .\perft_tests\filename.epd -maxDepth 4
 ```
 
 ## ⚖️ License

@@ -9,9 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
-
-	_ "net/http"
-	_ "net/http/pprof"
+	"time"
 )
 
 type PerftTest struct {
@@ -51,8 +49,6 @@ func parsePerftFile() {
 		}
 	}
 	defer file.Close()
-
-	//perftBegin := time.Now()
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
@@ -105,49 +101,46 @@ func parsePerftFile() {
 		return 1
 	})
 
-	fmt.Printf("Running %d Perfts at max-depth of %d", len(loadedPerftTests), maxDepth)
+	fmt.Printf("Running %d Perfts at max-depth of %d\n", len(loadedPerftTests), maxDepth)
 }
 
 func TestPerft(t *testing.T) {
 	parsePerftFile()
-	for i, perftTest := range loadedPerftTests {
-		i := i
-		perftTest := perftTest
-		t.Run(fmt.Sprintf("Test %d: '%s'", i, perftTest.fen), func(t *testing.T) {
-			game := NewGame(perftTest.fen)
-			if !positionVerbose {
-				t.Parallel()
-			}
 
-			for depth := 1; depth <= perftTest.maxDepth; depth++ {
-				if positionVerbose {
-					fmt.Printf("Evaluation depth: %d\n", depth)
+	start := time.Now()
+	totalNodes := 0
+
+	t.Run("Perft group test", func(t *testing.T) {
+		for i, perftTest := range loadedPerftTests {
+			i := i
+			perftTest := perftTest
+
+			t.Run(fmt.Sprintf("Test %d: '%s'", i, perftTest.fen), func(t *testing.T) {
+				if !positionVerbose {
+					t.Parallel()
 				}
 
-				result := game.Perft(depth, depth, "", positionVerbose)
+				game := NewGame(perftTest.fen)
 
-				if val, ok := perftTest.depthMap[depth]; ok && val != result {
-					t.Fatalf("\tTest_%d: failed at depth: %d. Expected nodes: %d, got: %d\n\n", i, depth, perftTest.depthMap[depth], result)
+				for depth := 1; depth <= perftTest.maxDepth; depth++ {
+					if positionVerbose {
+						fmt.Printf("Evaluation depth: %d\n", depth)
+					}
+
+					result := game.Perft(depth, depth, "", positionVerbose)
+					totalNodes += result
+
+					if val, ok := perftTest.depthMap[depth]; ok && val != result {
+						t.Fatalf("\tTest_%d: failed at depth: %d. Expected nodes: %d, got: %d\n\n", i, depth, perftTest.depthMap[depth], result)
+					}
 				}
-			}
-		})
-	}
-}
+			})
+		}
+	})
 
-func BenchPerft(b *testing.B) {
-	parsePerftFile()
-	b.ResetTimer()
-	for i, perftTest := range loadedPerftTests {
-		b.Run(fmt.Sprintf("Test %d: '%s'", i, perftTest.fen), func(bb *testing.B) {
-			game := NewGame(perftTest.fen)
-
-			for depth := 1; depth <= perftTest.maxDepth; depth++ {
-				result := game.Perft(depth, depth, "", positionVerbose)
-
-				if val, ok := perftTest.depthMap[depth]; ok && val != result {
-					b.Fatalf("failed at depth: %d. Expected nodes: %d, got: %d\n", depth, val, result)
-				}
-			}
-		})
+	elapsed := time.Since(start)
+	if elapsed.Seconds() > 0.2 {
+		kNodesPerSecond := float64(totalNodes) / elapsed.Seconds() / 1000.0 //kN/s
+		fmt.Printf("Nodes per second: %fkN/s\n", kNodesPerSecond)
 	}
 }
