@@ -7,11 +7,11 @@ type Movement struct {
 	TakingPiece   Piece // Optional
 	IsTakingPiece bool
 
-	From Position
-	To   Position
+	From Point
+	To   Point
 
 	// Next variables refer to the state before this movement have been done
-	PawnIsDoublePositionMovement        *bool
+	PawnIsDoublePointMovement           *bool
 	PawnIsAttackingButNotTakingDiagonal *bool
 
 	IsKingSideCastling  *bool
@@ -25,7 +25,7 @@ type Movement struct {
 	// CanKingSideCastling  bool // TODO: These two only in castle or King moves
 	// CanQueenSideCastling bool
 
-	EnPassant *Position
+	EnPassant *Point
 
 	PawnPromotionTo *Kind
 
@@ -43,8 +43,8 @@ func (m *Movement) WithTakingPiece(piece Piece) *Movement {
 	return m
 }
 
-func (m *Movement) WithPawn(isDoublePositionMovement, attackingButNotTakingDiagonal bool) *Movement {
-	m.PawnIsDoublePositionMovement = &isDoublePositionMovement
+func (m *Movement) WithPawn(isDoublePointMovement, attackingButNotTakingDiagonal bool) *Movement {
+	m.PawnIsDoublePointMovement = &isDoublePointMovement
 	m.PawnIsAttackingButNotTakingDiagonal = &attackingButNotTakingDiagonal
 	return m
 }
@@ -55,7 +55,7 @@ func (m *Movement) WithCastling(isQueenSideMove, isKingSideMove bool) *Movement 
 	return m
 }
 
-func NewMovement(movingPiece Piece, from, to Position, enPassant *Position, canWhiteQueenSideCastling, canWhiteKingSideCastling, canBlackQueenSideCastling, canBlackKingSideCastling bool) *Movement {
+func NewMovement(movingPiece Piece, from, to Point, enPassant *Point, canWhiteQueenSideCastling, canWhiteKingSideCastling, canBlackQueenSideCastling, canBlackKingSideCastling bool) *Movement {
 	return &Movement{
 		MovingPiece:   movingPiece,
 		IsTakingPiece: false,

@@ -4,7 +4,8 @@ import (
 	"chess/engine"
 	"fmt"
 	"math"
-	"time"
+
+	_ "net/http/pprof"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
@@ -25,40 +26,27 @@ var (
 )
 
 func init() {
+	// go func() {
+	// 	http.ListenAndServe("localhost:8080", nil)
+	// }() // PProf
+
+	// engine.RunPerftsFromEpdFile("perftsuite_a.epd", "short", 4)
+
 	rl.InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Chess game")
 	rl.SetTargetFPS(60)
 
 	engine.LoadTextures()
 }
 
-func RunPerft(fen string, maxDepth int) {
-	board := engine.NewBoardFromFen(fen)
-
-	fmt.Printf("Depth result (max: %d)\n", maxDepth)
-	for depth := 1; depth <= maxDepth; depth++ {
-		begin := time.Now()
-		positionMap := make(map[string]int)
-		result := board.Perft(depth, depth, "", positionMap)
-		spentMs := time.Now().Sub(begin).Milliseconds()
-
-		// for move, nodes := range positionMap {
-		// 	fmt.Printf("%s: %d\n", move, nodes)
-		// }
-
-		fmt.Printf("\tPerft at depth %d: %d movements (%d milliseconds)\n", depth, result, spentMs)
-	}
-	panic("\n Perft test ended")
-}
-
 func main() {
 	board := engine.NewStartingBoard()
 
-	var activePosition *engine.Position = nil
+	var activePoint *engine.Point = nil
 	var lastMovement *engine.Movement = nil
 
 	for !rl.WindowShouldClose() {
 		currentMovements := []engine.Movement{}
-		if activePosition != nil {
+		if activePoint != nil {
 			currentMovements = board.GetLegalMovements(board.PlayerToMove)
 			//currentMovements = board.GetPseudoMovements(board.PlayerToMove)
 		}
@@ -69,14 +57,14 @@ func main() {
 			j := int(math.Floor(float64(rl.GetMousePosition().X) / float64(CELL_SIZE)))
 
 			clickedAMovement := false
-			if activePosition != nil {
+			if activePoint != nil {
 				for _, movement := range currentMovements {
-					if movement.From.I == activePosition.I && movement.From.J == activePosition.J {
+					if movement.From.I == activePoint.I && movement.From.J == activePoint.J {
 						if movement.To.I == i && movement.To.J == j {
 							clickedAMovement = true
 							board.MakeMovement(movement)
 							lastMovement = &movement
-							activePosition = nil
+							activePoint = nil
 							break
 						}
 					}
@@ -85,10 +73,10 @@ func main() {
 
 			if !clickedAMovement && i >= 0 && j >= 0 && i < 8 && j < 8 {
 				if board.GetPieceAt(i, j).Kind == engine.Kind_None {
-					activePosition = nil
+					activePoint = nil
 				} else {
-					newActivePosition := engine.NewPosition(i, j)
-					activePosition = &newActivePosition
+					newActivePoint := engine.NewPoint(i, j)
+					activePoint = &newActivePoint
 				}
 			}
 		}
@@ -133,11 +121,11 @@ func main() {
 			}
 		}
 
-		if activePosition != nil {
+		if activePoint != nil {
 			totalThisPieceMovements := 0
 
 			for _, m := range currentMovements {
-				if m.From.I == activePosition.I && m.From.J == activePosition.J {
+				if m.From.I == activePoint.I && m.From.J == activePoint.J {
 					//fmt.Println(m.MovingPiece)
 					totalThisPieceMovements++
 

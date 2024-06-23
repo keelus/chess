@@ -6,22 +6,22 @@ type Piece struct {
 
 	IsPawnFirstMovement bool
 
-	Position Position
+	Point Point
 }
 
-func NewPiece(color Color, kind Kind, pos Position) Piece {
+func NewPiece(color Color, kind Kind, pos Point) Piece {
 	return Piece{
 		Color: color,
 		Kind:  kind,
 
 		IsPawnFirstMovement: kind == Kind_Pawn,
 
-		Position: pos,
+		Point: pos,
 	}
 }
 
 func (p Piece) DeepCopy() Piece {
-	newPiece := NewPiece(p.Color, p.Kind, NewPosition(p.Position.I, p.Position.J))
+	newPiece := NewPiece(p.Color, p.Kind, NewPoint(p.Point.I, p.Point.J))
 	newPiece.IsPawnFirstMovement = p.IsPawnFirstMovement
 	return newPiece
 }

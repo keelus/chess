@@ -14,7 +14,7 @@ type Board struct {
 	CanKingCastling  map[Color]bool
 	CanQueenCastling map[Color]bool
 
-	EnPassant *Position
+	EnPassant *Point
 }
 
 func NewEmptyBoard() Board {
@@ -31,7 +31,7 @@ func createEmptyBoardData() [8][8]Piece {
 	var boardData [8][8]Piece
 	for i := range boardData {
 		for j := range boardData {
-			boardData[i][j].Position = NewPosition(i, j)
+			boardData[i][j].Point = NewPoint(i, j)
 			boardData[i][j].Color = Color_None
 			boardData[i][j].Kind = Kind_None
 			boardData[i][j].IsPawnFirstMovement = false
@@ -102,7 +102,7 @@ func NewBoardFromFen(fen string) Board {
 }
 
 func (b *Board) CreatePieceAt(color Color, kind Kind, i, j int) {
-	b.Data[i][j] = NewPiece(color, kind, NewPosition(i, j))
+	b.Data[i][j] = NewPiece(color, kind, NewPoint(i, j))
 }
 
 func (b Board) GetPieceAt(i, j int) Piece {
@@ -170,14 +170,14 @@ func (b *Board) MakeMovement(movement Movement) {
 		if movement.MovingPiece.Kind == Kind_Pawn {
 			movement.MovingPiece.IsPawnFirstMovement = false
 
-			if *movement.PawnIsDoublePositionMovement {
+			if *movement.PawnIsDoublePointMovement {
 				invertSum := -1
 				if movement.MovingPiece.Color == Color_Black {
 					invertSum = +1
 				}
 
-				newEnPassantPosition := NewPosition(movement.From.I+invertSum, movement.From.J)
-				b.EnPassant = &newEnPassantPosition
+				newEnPassantPoint := NewPoint(movement.From.I+invertSum, movement.From.J)
+				b.EnPassant = &newEnPassantPoint
 			}
 		} else if movement.MovingPiece.Kind == Kind_King {
 			b.CanQueenCastling[movement.MovingPiece.Color] = false
@@ -185,12 +185,12 @@ func (b *Board) MakeMovement(movement Movement) {
 		} else if movement.MovingPiece.Kind == Kind_Rook {
 			// Check if currently moving rook is from queen or king side
 			if b.CanQueenCastling[movement.MovingPiece.Color] {
-				if movement.MovingPiece.Position.J == 0 {
+				if movement.MovingPiece.Point.J == 0 {
 					b.CanQueenCastling[movement.MovingPiece.Color] = false
 				}
 			}
 			if b.CanKingCastling[movement.MovingPiece.Color] {
-				if movement.MovingPiece.Position.J == 7 {
+				if movement.MovingPiece.Point.J == 7 {
 					b.CanKingCastling[movement.MovingPiece.Color] = false
 				}
 			}
@@ -198,8 +198,8 @@ func (b *Board) MakeMovement(movement Movement) {
 
 		if movement.IsTakingPiece {
 			// Do it this wad, so it's en passant compatible
-			b.Data[movement.TakingPiece.Position.I][movement.TakingPiece.Position.J].Kind = Kind_None
-			b.Data[movement.TakingPiece.Position.I][movement.TakingPiece.Position.J].Color = Color_None
+			b.Data[movement.TakingPiece.Point.I][movement.TakingPiece.Point.J].Kind = Kind_None
+			b.Data[movement.TakingPiece.Point.I][movement.TakingPiece.Point.J].Color = Color_None
 
 			if movement.TakingPiece.Kind == Kind_Rook {
 				if b.CanQueenCastling[movement.TakingPiece.Color] {
@@ -208,7 +208,7 @@ func (b *Board) MakeMovement(movement Movement) {
 						castlingRow = 0
 					}
 
-					if movement.TakingPiece.Position.I == castlingRow && movement.TakingPiece.Position.J == 0 {
+					if movement.TakingPiece.Point.I == castlingRow && movement.TakingPiece.Point.J == 0 {
 						b.CanQueenCastling[movement.TakingPiece.Color] = false
 					}
 				}
@@ -218,14 +218,14 @@ func (b *Board) MakeMovement(movement Movement) {
 						castlingRow = 0
 					}
 
-					if movement.TakingPiece.Position.I == castlingRow && movement.TakingPiece.Position.J == 7 {
+					if movement.TakingPiece.Point.I == castlingRow && movement.TakingPiece.Point.J == 7 {
 						b.CanKingCastling[movement.TakingPiece.Color] = false
 					}
 				}
 			}
 		}
 
-		// movement.MovingPiece.Position = NewPosition(movement.To.I, movement.To.J)
+		// movement.MovingPiece.Point = NewPoint(movement.To.I, movement.To.J)
 		// b.Data[movement.To.I][movement.To.J] = movement.MovingPiece
 		// b.Data[movement.From.I][movement.From.J] = nil
 
@@ -266,9 +266,9 @@ func (b *Board) UndoMovement(movement Movement) {
 
 	// Create the taken piece (if aplicable) into the old position
 	if movement.IsTakingPiece {
-		b.Data[movement.TakingPiece.Position.I][movement.TakingPiece.Position.J].Kind = movement.TakingPiece.Kind
-		b.Data[movement.TakingPiece.Position.I][movement.TakingPiece.Position.J].Color = movement.TakingPiece.Color
-		b.Data[movement.TakingPiece.Position.I][movement.TakingPiece.Position.J].IsPawnFirstMovement = movement.TakingPiece.IsPawnFirstMovement
+		b.Data[movement.TakingPiece.Point.I][movement.TakingPiece.Point.J].Kind = movement.TakingPiece.Kind
+		b.Data[movement.TakingPiece.Point.I][movement.TakingPiece.Point.J].Color = movement.TakingPiece.Color
+		b.Data[movement.TakingPiece.Point.I][movement.TakingPiece.Point.J].IsPawnFirstMovement = movement.TakingPiece.IsPawnFirstMovement
 
 	}
 
@@ -318,7 +318,7 @@ func (b *Board) UndoMovement(movement Movement) {
 	}
 }
 
-func (b *Board) FilterPseudoMovements(movements []Movement) []Movement {
+func (b *Board) FilterPseudoMovements(movements *[]Movement) []Movement {
 	//beginningColor := b.PlayerToMove
 	filteredMovements := []Movement{}
 
@@ -327,7 +327,7 @@ func (b *Board) FilterPseudoMovements(movements []Movement) []Movement {
 		opponentColor = Color_Black
 	}
 
-	for _, myMovement := range movements {
+	for _, myMovement := range *movements {
 		// Check this ???
 		// This attack does not have to be evaluated, as its not taking, and pawns cant move diagonally while not attacking
 		// The purpose of this is to, when checking a castling, having the movements (these "attacking but not taking") diagonals
