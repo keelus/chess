@@ -38,10 +38,14 @@ func (b *Board) Perft(initialDepth, depth int, currentMove string, positionVerbo
 	return nodes
 }
 
-func RunPerftTest(perftTest PerftTest, positionVerbose bool) {
-	fmt.Printf("## Running a Perft [max-depth: %d] ##\n", perftTest.maxDepth)
-	fmt.Printf("\tFen: '%s'\n", perftTest.fen)
-	fmt.Println("\tResults:")
+func RunPerftTest(perftTest PerftTest, outputMode string, positionVerbose bool) {
+	if outputMode == "short" {
+		fmt.Printf("- Perft test: '%s'. Passed: ", perftTest.fen)
+	} else {
+		fmt.Printf("## Running a Perft [max-depth: %d] ##\n", perftTest.maxDepth)
+		fmt.Printf("\tFen: '%s'\n", perftTest.fen)
+		fmt.Println("\tResults:")
+	}
 	board := NewBoardFromFen(perftTest.fen)
 
 	testBegin := time.Now()
@@ -51,15 +55,22 @@ func RunPerftTest(perftTest PerftTest, positionVerbose bool) {
 		result := board.Perft(depth, depth, "", positionVerbose)
 		currentDepthSpentMs := time.Now().Sub(currentDepthBegin).Milliseconds()
 
-		fmt.Printf("\t\tDepth %d -> %d (%d milliseconds)\n", depth, result, currentDepthSpentMs)
+		if outputMode != "short" {
+			fmt.Printf("\t\tDepth %d -> %d (%d milliseconds)\n", depth, result, currentDepthSpentMs)
+		}
+
 		if val, ok := perftTest.depthMap[depth]; ok && val != result {
-			fmt.Printf("\t\t\t ❌ failed, stopping current Perft. Expected nodes: %d\n", val)
-			return
+			fmt.Printf("\t\t\t ❌ failed, stopping Perft. Expected nodes: %d, got: %d at depth %d\n", val, result, depth)
+			os.Exit(1)
 		}
 	}
 
 	testSpentS := time.Now().Sub(testBegin).Seconds()
-	fmt.Printf("\t\t\t ✔ Test succeeded in %02f seconds.\n", testSpentS)
+	if outputMode == "short" {
+		fmt.Println("true")
+	} else {
+		fmt.Printf("\t\t\t ✔ Test succeeded in %02f seconds.\n", testSpentS)
+	}
 }
 
 type PerftTest struct {
@@ -68,12 +79,14 @@ type PerftTest struct {
 	maxDepth int
 }
 
-func RunPerftsFromEpdFile(filename string) {
+func RunPerftsFromEpdFile(filename, outputMode string, maxDepth int) {
 	file, err := os.Open(filename)
 	if err != nil {
 		panic(err)
 	}
 	defer file.Close()
+
+	perftBegin := time.Now()
 
 	perftTests := make([]PerftTest, 0)
 
@@ -99,7 +112,7 @@ func RunPerftsFromEpdFile(filename string) {
 			depthAmount, _ := strconv.Atoi(string(depthParts[0][1]))
 			nodeAmount, _ := strconv.Atoi(depthParts[1])
 
-			if depthAmount > maxDepthFound {
+			if depthAmount > maxDepthFound && depthAmount <= maxDepth {
 				maxDepthFound = depthAmount
 			}
 
@@ -126,6 +139,14 @@ func RunPerftsFromEpdFile(filename string) {
 
 	fmt.Printf("### %d TESTS FOUND ###\n", len(perftTests))
 	for _, perftTest := range perftTests {
-		RunPerftTest(perftTest, false)
+		RunPerftTest(perftTest, outputMode, false)
 	}
+
+	perftSpentNs := time.Now().Sub(perftBegin).Nanoseconds()
+	perftSpentUs := time.Now().Sub(perftBegin).Microseconds()
+	perftSpentMs := time.Now().Sub(perftBegin).Milliseconds()
+	perftSpentS := time.Now().Sub(perftBegin).Seconds()
+
+	fmt.Printf("Time spent: %fs | %dms | %dus | %dns\n", perftSpentS, perftSpentMs, perftSpentUs, perftSpentNs)
+	os.Exit(1)
 }
