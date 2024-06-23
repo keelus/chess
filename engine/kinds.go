@@ -4,16 +4,16 @@ import "unicode"
 
 const KIND_AMOUNT = 6
 
-type Kind uint
+type Kind uint8
 
 const (
-	Kind_King Kind = iota
+	Kind_None Kind = iota
+	Kind_King
 	Kind_Queen
 	Kind_Rook
 	Kind_Bishop
 	Kind_Knight
 	Kind_Pawn
-	Kind_None
 )
 
 func (t Kind) ToRune() rune {

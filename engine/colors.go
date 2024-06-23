@@ -2,12 +2,12 @@ package engine
 
 const COLOR_AMOUNT = 2
 
-type Color uint
+type Color uint8
 
 const (
-	Color_White Color = iota
+	Color_None Color = iota
+	Color_White
 	Color_Black
-	Color_None
 )
 
 func (c Color) ToRune() rune {

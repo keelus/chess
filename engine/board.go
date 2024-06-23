@@ -14,7 +14,7 @@ func NewBoardEmpty() Board {
 			board[i][j].Point = NewPoint(i, j)
 			board[i][j].Color = Color_None
 			board[i][j].Kind = Kind_None
-			board[i][j].IsPawnFirstMovement = false
+			//board[i][j].IsPawnFirstMovement = false
 		}
 	}
 
@@ -36,16 +36,16 @@ func NewBoardFromFen(placementFenData [8]string) Board {
 				kind, color := KindAndColorFromRune(colData)
 
 				board.CreatePieceAt(color, kind, row, col)
-				if kind == Kind_Pawn {
-					pawnRow := uint8(6)
-					if color == Color_Black {
-						pawnRow = 1
-					}
+				// if kind == Kind_Pawn {
+				// 	//pawnRow := uint8(6)
+				// 	if color == Color_Black {
+				// 		pawnRow = 1
+				// 	}
 
-					if row != pawnRow {
-						board[row][col].IsPawnFirstMovement = false
-					}
-				}
+				// 	// if row != pawnRow {
+				// 	// 	board[row][col].IsPawnFirstMovement = false
+				// 	// }
+				// }
 			}
 
 			col++

@@ -142,9 +142,13 @@ func (p Position) GetPiecePseudoMovements(piece Piece, movements *[]Movement) {
 			invertMult = -1
 		}
 
-		maxDistance := -2
+		startPawnRow := uint8(6)
+		if piece.Color == Color_Black {
+			startPawnRow = 1
+		}
 
-		if !piece.IsPawnFirstMovement {
+		maxDistance := -2
+		if piece.Point.I != startPawnRow {
 			maxDistance = -1
 		}
 
