@@ -7,6 +7,8 @@ type Game struct {
 	CurrentPosition Position
 
 	HasEnded bool
+
+	ComputedLegalMovements []Movement
 }
 
 func NewGame(fen string) Game {
@@ -14,15 +16,24 @@ func NewGame(fen string) Game {
 		fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 	}
 
-	return Game{
+	newGame := Game{
 		Positions:       make([]Position, 0),
 		CurrentPosition: NewPositionFromFen(fen),
 
 		HasEnded: false,
 	}
+
+	newGame.ComputeLegalMovements()
+	return newGame
 }
 
-func (g *Game) UndoMovement() {
+func (g *Game) ComputeLegalMovements() {
+	pseudoMovements := g.CurrentPosition.GetPseudoMovements(g.CurrentPosition.Status.PlayerToMove)
+	legalMovements := g.FilterPseudoMovements(&pseudoMovements)
+	g.ComputedLegalMovements = legalMovements
+}
+
+func (g *Game) UndoMovement(recomputeLegalMovements bool) {
 	if len(g.Positions) == 0 {
 		fmt.Println("Can undo more.")
 		return

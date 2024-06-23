@@ -1,10 +1,7 @@
 package engine
 
 func (g *Game) GetLegalMovements() []Movement {
-	pseudoMovements := g.CurrentPosition.GetPseudoMovements(g.CurrentPosition.Status.PlayerToMove)
-	legalMovements := g.FilterPseudoMovements(&pseudoMovements)
-	//fmt.Printf("Pseudo vs legal: %d vs %d\n", len(pseudoMovements), len(legalMovements))
-	return legalMovements
+	return g.ComputedLegalMovements
 }
 
 func (p Position) GetPseudoMovements(color Color) []Movement {
@@ -14,7 +11,6 @@ func (p Position) GetPseudoMovements(color Color) []Movement {
 		for _, piece := range row {
 			if piece.Color == color {
 				p.GetPiecePseudoMovements(piece, &movements)
-				//movements = append(movements, p.Status.GetPiecePseudoMovements(p)...)
 			}
 		}
 	}

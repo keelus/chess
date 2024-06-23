@@ -30,6 +30,24 @@ Currently, the tests are only compared using the `nodes` count.
 | Position 5          | ✅       | ✅        | ✅        | ✅        | ❓         | ❓        |
 | Position 6          | ✅       | ✅        | ✅        | ✅        | ❓         | ❓        |
 
+To make a test or bench a given `.epd` file (check `engine/game_test.go` to see the file format and command arguments to the test):
+
+
+#### Test
+While inside `engine` folder:
+```
+go test -v -epd filename.epd -maxDepth 4
+```
+To verbose each movement's nodes and FEN,
+```
+go test -v -epd filename.epd -maxDepth 4 -positionVerbose
+```
+
+#### Bench
+While inside `engine` folder:
+```
+go test -bench=. -benchmem -memprofile memprofile.out -cpuprofile profile.out 4 -epd .\perft_tests\filename.epd -maxDepth 4
+```
 
 ## ⚖️ License
 This project is open source under the terms of the [MIT License](./LICENSE)

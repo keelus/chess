@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"math"
 
-	_ "net/http/pprof"
-
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
@@ -26,12 +24,6 @@ var (
 )
 
 func init() {
-	// go func() {
-	// 	http.ListenAndServe("localhost:8080", nil)
-	// }() // PProf
-
-	//engine.RunPerftsFromEpdFile("perft_tests/perftsuite_a.epd", "short", 4)
-
 	rl.InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Chess game")
 	rl.SetTargetFPS(60)
 
@@ -64,7 +56,7 @@ func main() {
 					if movement.From.I == activePoint.I && movement.From.J == activePoint.J {
 						if movement.To.I == i && movement.To.J == j {
 							clickedAMovement = true
-							game.MakeMovement(movement)
+							game.MakeMovement(movement, true)
 							//lastMovement = &movement
 							activePoint = nil
 							break
@@ -83,8 +75,9 @@ func main() {
 			}
 		}
 
+		// For debugging
 		if rl.IsKeyPressed(rl.KeyU) {
-			game.UndoMovement()
+			game.UndoMovement(true)
 		}
 
 		if rl.IsKeyPressed(rl.KeyT) {
@@ -148,22 +141,22 @@ func main() {
 		drawPlayerInformation := func(xPos int32, color engine.Color) {
 			rl.DrawText(fmt.Sprintf("Player %c", color.ToRune()), xPos+5, SCREEN_HEIGHT-BOTTOM_BAR+2, 20, rl.RayWhite)
 			rl.DrawText(
-				fmt.Sprintf("-Can queen castle: %t", game.CurrentPosition.Status.CastlingRights.CanQueenCastling(color)),
+				fmt.Sprintf("-Can queen castle: %t", game.CurrentPosition.Status.CastlingRights.QueenSide[color]),
 				xPos+5, SCREEN_HEIGHT-BOTTOM_BAR+2+20,
 				16,
 				func() rl.Color {
-					if game.CurrentPosition.Status.CastlingRights.CanQueenCastling(color) {
+					if game.CurrentPosition.Status.CastlingRights.QueenSide[color] {
 						return rl.DarkGreen
 					}
 					return rl.Maroon
 				}(),
 			)
 			rl.DrawText(
-				fmt.Sprintf("-Can king castle: %t", game.CurrentPosition.Status.CastlingRights.CanKingCastling(color)),
+				fmt.Sprintf("-Can king castle: %t", game.CurrentPosition.Status.CastlingRights.KingSide[color]),
 				xPos+5, SCREEN_HEIGHT-BOTTOM_BAR+2+20+16,
 				16,
 				func() rl.Color {
-					if game.CurrentPosition.Status.CastlingRights.CanKingCastling(color) {
+					if game.CurrentPosition.Status.CastlingRights.KingSide[color] {
 						return rl.DarkGreen
 					}
 					return rl.Maroon

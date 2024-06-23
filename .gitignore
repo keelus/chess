@@ -1,1 +1,2 @@
-/perft_tests/
+/engine/perft_tests/
+/engine/*.out

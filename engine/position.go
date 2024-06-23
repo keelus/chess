@@ -73,7 +73,7 @@ func NewPositionFromFen(fen string) Position {
 }
 
 // Suppose is legal
-func (g *Game) MakeMovement(movement Movement) {
+func (g *Game) MakeMovement(movement Movement, recomputeLegalMovements bool) {
 	newPosition := Position{
 		Board:  g.CurrentPosition.Board,
 		Status: g.CurrentPosition.Status.DeepCopy(),
@@ -219,6 +219,9 @@ func (g *Game) MakeMovement(movement Movement) {
 
 	g.Positions = append(g.Positions, g.CurrentPosition)
 	g.CurrentPosition = newPosition
+	if recomputeLegalMovements {
+		g.ComputeLegalMovements()
+	}
 }
 
 func (g *Game) FilterPseudoMovements(movements *[]Movement) []Movement {
@@ -270,7 +273,7 @@ func (g *Game) FilterPseudoMovements(movements *[]Movement) []Movement {
 			continue
 		}
 
-		g.MakeMovement(myMovement)
+		g.MakeMovement(myMovement, false)
 		opponentPseudoMovements := g.CurrentPosition.GetPseudoMovements(opponentColor)
 
 		weGetChecked := g.CurrentPosition.CheckForCheck(opponentPseudoMovements)
@@ -280,7 +283,7 @@ func (g *Game) FilterPseudoMovements(movements *[]Movement) []Movement {
 		}
 		// Check for check
 		//g.UndoMovement(myMovement)
-		g.UndoMovement()
+		g.UndoMovement(false)
 	}
 
 	//endColor := b.PlayerToMove
@@ -373,12 +376,3 @@ func (p Position) ToFen() string {
 
 	return dataFen
 }
-
-// We have White pseudo movements
-// Do each movement, check if any enemy
-
-// For future implementation
-// func (b Board) GetPseudoMovements() {}
-// func (b Board) GetLegalMovements()  {}
-// func (b *Board) MakeMovement()      {}
-// func (b *Board) UnMakeMovement()    {}
