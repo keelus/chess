@@ -73,7 +73,7 @@ func (p Position) GetPiecePseudoMovements(piece Piece, movements *[]Movement) {
 			}
 		}
 
-		if p.Status.CastlingRights.CanQueenCastling(piece.Color) {
+		if p.Status.CastlingRights.QueenSide[piece.Color] {
 			// Check if space to rook is empty
 			canCastle := true
 			for j := piece.Point.J - 1; j >= piece.Point.J-3; j-- {
@@ -98,7 +98,7 @@ func (p Position) GetPiecePseudoMovements(piece Piece, movements *[]Movement) {
 
 		}
 
-		if p.Status.CastlingRights.CanKingCastling(piece.Color) {
+		if p.Status.CastlingRights.KingSide[piece.Color] {
 			// Check if space to rook is empty
 			canCastle := true
 			for j := piece.Point.J + 1; j < 7; j++ {
