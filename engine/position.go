@@ -144,7 +144,8 @@ func (g *Game) MakeMovement(movement Movement, recomputeLegalMovements bool) {
 					invertSum = +1
 				}
 
-				newEnPassantPoint := NewPoint(movement.From.I+invertSum, movement.From.J)
+				// Uint8 from that sum/rest, as it will never be negative in a starting double pawn
+				newEnPassantPoint := NewPoint(uint8(int(movement.From.I)+invertSum), movement.From.J)
 				newPosition.Status.EnPassant = &newEnPassantPoint
 			}
 		} else if movement.MovingPiece.Kind == Kind_King {
@@ -171,7 +172,7 @@ func (g *Game) MakeMovement(movement Movement, recomputeLegalMovements bool) {
 
 			if movement.TakingPiece.Kind == Kind_Rook {
 				if newPosition.Status.CastlingRights.QueenSide[movement.TakingPiece.Color] {
-					castlingRow := 7
+					castlingRow := uint8(7)
 					if movement.TakingPiece.Color == Color_Black {
 						castlingRow = 0
 					}
@@ -181,7 +182,7 @@ func (g *Game) MakeMovement(movement Movement, recomputeLegalMovements bool) {
 					}
 				}
 				if newPosition.Status.CastlingRights.KingSide[movement.TakingPiece.Color] {
-					castlingRow := 7
+					castlingRow := uint8(7)
 					if movement.TakingPiece.Color == Color_Black {
 						castlingRow = 0
 					}
@@ -256,14 +257,15 @@ func (g *Game) FilterPseudoMovements(movements *[]Movement) []Movement {
 			}
 
 			// Cols that must not be being attacked
-			var colFrom, colTo int
+			var colFrom, colTo uint8
 
+			// TODO: Hard code positions to less operations
 			if myMovement.IsQueenSideCastling != nil && *myMovement.IsQueenSideCastling {
-				colFrom = myMovement.From.J - 1
-				colTo = myMovement.From.J - 2
+				colFrom = uint8(int(myMovement.From.J) - 1)
+				colTo = uint8(int(myMovement.From.J) - 2)
 			} else if myMovement.IsKingSideCastling != nil && *myMovement.IsKingSideCastling {
-				colFrom = myMovement.From.J + 1
-				colTo = myMovement.From.J + 2
+				colFrom = uint8(int(myMovement.From.J) + 1)
+				colTo = uint8(int(myMovement.From.J) + 2)
 			}
 
 			isCastlingLegal = g.CurrentPosition.CheckForCastlingLegal(myMovement.From.I, colFrom, colTo, currentOpponentPseudo)
@@ -303,7 +305,7 @@ func (p Position) CheckForCheck(opponentPseudoMovements []Movement) bool {
 	return false
 }
 
-func (p Position) CheckForCastlingLegal(row, colFrom, colTo int, opponentPseudoMovements []Movement) bool {
+func (p Position) CheckForCastlingLegal(row, colFrom, colTo uint8, opponentPseudoMovements []Movement) bool {
 	jFrom, jTo := colFrom, colTo
 
 	if jFrom > jTo {

@@ -43,7 +43,7 @@ func (g *Game) UndoMovement(recomputeLegalMovements bool) {
 	}
 }
 
-func (g *Game) GetPieceAt(i, j int) Piece {
+func (g *Game) GetPieceAt(i, j uint8) Piece {
 	return g.CurrentPosition.Board.GetPieceAt(i, j)
 }
 

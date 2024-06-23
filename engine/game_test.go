@@ -136,6 +136,7 @@ func TestPerft(t *testing.T) {
 
 func BenchPerft(b *testing.B) {
 	parsePerftFile()
+	b.ResetTimer()
 	for i, perftTest := range loadedPerftTests {
 		b.Run(fmt.Sprintf("Test %d: '%s'", i, perftTest.fen), func(bb *testing.B) {
 			game := NewGame(perftTest.fen)

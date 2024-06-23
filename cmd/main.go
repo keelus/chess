@@ -47,8 +47,8 @@ func main() {
 		//currentMovements := board.GetLegalMovements()
 
 		if rl.IsMouseButtonPressed(rl.MouseButtonLeft) {
-			i := int(math.Floor(float64(rl.GetMousePosition().Y) / float64(CELL_SIZE)))
-			j := int(math.Floor(float64(rl.GetMousePosition().X) / float64(CELL_SIZE)))
+			i := uint8(math.Floor(float64(rl.GetMousePosition().Y) / float64(CELL_SIZE)))
+			j := uint8(math.Floor(float64(rl.GetMousePosition().X) / float64(CELL_SIZE)))
 
 			clickedAMovement := false
 			if activePoint != nil {
@@ -107,8 +107,8 @@ func main() {
 
 				rl.DrawRectangle(j*CELL_SIZE, i*CELL_SIZE, CELL_SIZE, CELL_SIZE, cellColor)
 
-				if game.GetPieceAt(int(i), int(j)).Kind != engine.Kind_None {
-					currentPiece := game.GetPieceAt(int(i), int(j))
+				if game.GetPieceAt(uint8(i), uint8(j)).Kind != engine.Kind_None {
+					currentPiece := game.GetPieceAt(uint8(i), uint8(j))
 					rl.DrawTexture(engine.GetPieceTexture(currentPiece.Color, currentPiece.Kind), j*CELL_SIZE, i*CELL_SIZE, rl.RayWhite)
 				}
 			}

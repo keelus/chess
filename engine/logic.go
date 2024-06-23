@@ -31,38 +31,29 @@ func (p Position) GetPiecePseudoMovements(piece Piece, movements *[]Movement) {
 		p.getOrthogonalPseudoMovements(piece, movements)
 		return
 	case Kind_King:
-		for i := -1; i < 2; i++ {
-			for j := -1; j < 2; j++ {
+		for i := int8(-1); i < 2; i++ {
+			for j := int8(-1); j < 2; j++ {
 				if i == 0 && j == 0 {
 					continue
 				}
 
-				finalI, finalJ := piece.Point.I+i, piece.Point.J+j
-
+				finalI, finalJ := int8(piece.Point.I)+i, int8(piece.Point.J)+j
 				if finalI >= 0 && finalJ >= 0 && finalI < 8 && finalJ < 8 {
-					pieceAt := p.Board.GetPieceAt(finalI, finalJ)
+					row := uint8(finalI)
+					col := uint8(finalJ)
+					pieceAt := p.Board.GetPieceAt(uint8(finalI), uint8(finalJ))
 
 					if pieceAt.Kind == Kind_None {
 						*movements = append(*movements,
 							*NewMovement(piece,
 								piece.Point,
-								NewPoint(finalI, finalJ),
-								// p.Status.EnPassant,
-								// p.Status.CanQueenCastling[Color_White],
-								// p.Status.CanKingCastling[Color_White],
-								// p.Status.CanQueenCastling[Color_Black],
-								// p.Status.CanKingCastling[Color_Black],
+								NewPoint(row, col),
 							))
 					} else if pieceAt.Color != piece.Color {
 						*movements = append(*movements,
 							*NewMovement(piece,
 								piece.Point,
-								NewPoint(finalI, finalJ),
-								// p.Status.EnPassant,
-								// p.Status.CanQueenCastling[Color_White],
-								// p.Status.CanKingCastling[Color_White],
-								// p.Status.CanQueenCastling[Color_Black],
-								// p.Status.CanKingCastling[Color_Black],
+								NewPoint(row, col),
 							).WithTakingPiece(pieceAt))
 					}
 				}
@@ -84,11 +75,6 @@ func (p Position) GetPiecePseudoMovements(piece Piece, movements *[]Movement) {
 					*NewMovement(piece,
 						piece.Point,
 						NewPoint(piece.Point.I, piece.Point.J-2),
-						// p.Status.EnPassant,
-						// p.Status.CanQueenCastling[Color_White],
-						// p.Status.CanKingCastling[Color_White],
-						// p.Status.CanQueenCastling[Color_Black],
-						// p.Status.CanKingCastling[Color_Black],
 					).WithCastling(true, false))
 			}
 
@@ -124,32 +110,25 @@ func (p Position) GetPiecePseudoMovements(piece Piece, movements *[]Movement) {
 		dirs := [8][2]int{{-2, -1}, {-2, 1}, {-1, 2}, {1, 2}, {2, 1}, {2, -1}, {1, -2}, {-1, -2}} // {i, j} -> From TopRight, clockwise untill TopRight (bottom left)
 
 		for _, dir := range dirs {
-			finalI, finalJ := piece.Point.I+dir[0], piece.Point.J+dir[1]
+			finalI, finalJ := int(piece.Point.I)+dir[0], int(piece.Point.J)+dir[1]
 
 			if finalI >= 0 && finalJ >= 0 && finalI < 8 && finalJ < 8 {
-				pieceAt := p.Board.GetPieceAt(finalI, finalJ)
+				row := uint8(finalI)
+				col := uint8(finalJ)
+
+				pieceAt := p.Board.GetPieceAt(row, col)
 
 				if pieceAt.Kind == Kind_None {
 					*movements = append(*movements,
 						*NewMovement(piece,
 							piece.Point,
-							NewPoint(finalI, finalJ),
-							// p.Status.EnPassant,
-							// p.Status.CanQueenCastling[Color_White],
-							// p.Status.CanKingCastling[Color_White],
-							// p.Status.CanQueenCastling[Color_Black],
-							// p.Status.CanKingCastling[Color_Black],
+							NewPoint(row, col),
 						))
 				} else if pieceAt.Color != piece.Color {
 					*movements = append(*movements,
 						*NewMovement(piece,
 							piece.Point,
-							NewPoint(finalI, finalJ),
-							// p.Status.EnPassant,
-							// p.Status.CanQueenCastling[Color_White],
-							// p.Status.CanKingCastling[Color_White],
-							// p.Status.CanQueenCastling[Color_Black],
-							// p.Status.CanKingCastling[Color_Black],
+							NewPoint(row, col),
 						).WithTakingPiece(pieceAt))
 				}
 			}
@@ -177,9 +156,10 @@ func (p Position) GetPiecePseudoMovements(piece Piece, movements *[]Movement) {
 
 		// Straight line
 		for i := -1; i >= maxDistance; i-- {
-			finalI := piece.Point.I + i*invertMult
+			finalI := int(piece.Point.I) + i*invertMult
 			if finalI >= 0 && finalI < 8 {
-				pieceAt := p.Board.GetPieceAt(finalI, piece.Point.J)
+				row := uint8(finalI)
+				pieceAt := p.Board.GetPieceAt(row, piece.Point.J)
 				if pieceAt.Kind != Kind_None {
 					break
 				}
@@ -189,24 +169,14 @@ func (p Position) GetPiecePseudoMovements(piece Piece, movements *[]Movement) {
 						*movements = append(*movements,
 							*NewMovement(piece,
 								piece.Point,
-								NewPoint(finalI, piece.Point.J),
-								// p.Status.EnPassant,
-								// p.Status.CanQueenCastling[Color_White],
-								// p.Status.CanKingCastling[Color_White],
-								// p.Status.CanQueenCastling[Color_Black],
-								// p.Status.CanKingCastling[Color_Black],
+								NewPoint(row, piece.Point.J),
 							).WithPawn(i == -2, false).WithPawnPromotion(kind))
 					}
 				} else {
 					*movements = append(*movements,
 						*NewMovement(piece,
 							piece.Point,
-							NewPoint(finalI, piece.Point.J),
-							// p.Status.EnPassant,
-							// p.Status.CanQueenCastling[Color_White],
-							// p.Status.CanKingCastling[Color_White],
-							// p.Status.CanQueenCastling[Color_Black],
-							// p.Status.CanKingCastling[Color_Black],
+							NewPoint(row, piece.Point.J),
 						).WithPawn(i == -2, false))
 				}
 			}
@@ -215,9 +185,12 @@ func (p Position) GetPiecePseudoMovements(piece Piece, movements *[]Movement) {
 		dirs := [2][2]int{{-1, -1}, {-1, 1}}
 
 		for _, dir := range dirs {
-			finalI, finalJ := piece.Point.I+dir[0]*invertMult, piece.Point.J+dir[1]*invertMult
+			finalI, finalJ := int(piece.Point.I)+dir[0]*invertMult, int(piece.Point.J)+dir[1]*invertMult
 			if finalI >= 0 && finalJ >= 0 && finalI < 8 && finalJ < 8 {
-				pieceAt := p.Board.GetPieceAt(finalI, finalJ)
+				row := uint8(finalI)
+				col := uint8(finalJ)
+
+				pieceAt := p.Board.GetPieceAt(row, col)
 				// TODO: Pawn attacking castling could be done in a different way:
 				// PseudoMovements returns if attackingQueen, and if attackingKing (if any piece is) so is faster
 
@@ -227,40 +200,25 @@ func (p Position) GetPiecePseudoMovements(piece Piece, movements *[]Movement) {
 							*movements = append(*movements,
 								*NewMovement(piece,
 									piece.Point,
-									NewPoint(finalI, finalJ),
-									// p.Status.EnPassant,
-									// p.Status.CanQueenCastling[Color_White],
-									// p.Status.CanKingCastling[Color_White],
-									// p.Status.CanQueenCastling[Color_Black],
-									// p.Status.CanKingCastling[Color_Black],
+									NewPoint(row, col),
 								).WithTakingPiece(pieceAt).WithPawn(false, false).WithPawnPromotion(kind))
 						}
 					} else {
 						*movements = append(*movements,
 							*NewMovement(piece,
 								piece.Point,
-								NewPoint(finalI, finalJ),
-								// p.Status.EnPassant,
-								// p.Status.CanQueenCastling[Color_White],
-								// p.Status.CanKingCastling[Color_White],
-								// p.Status.CanQueenCastling[Color_Black],
-								// p.Status.CanKingCastling[Color_Black],
+								NewPoint(row, col),
 							).WithTakingPiece(pieceAt).WithPawn(false, false))
 					}
 				} else {
 					*movements = append(*movements,
 						*NewMovement(piece,
 							piece.Point,
-							NewPoint(finalI, finalJ),
-							// p.Status.EnPassant,
-							// p.Status.CanQueenCastling[Color_White],
-							// p.Status.CanKingCastling[Color_White],
-							// p.Status.CanQueenCastling[Color_Black],
-							// p.Status.CanKingCastling[Color_Black],
+							NewPoint(row, col),
 						).WithPawn(false, true))
 				}
 
-				if pieceAt.Kind == Kind_None && p.Status.EnPassant != nil && p.Status.EnPassant.I == finalI && p.Status.EnPassant.J == finalJ {
+				if pieceAt.Kind == Kind_None && p.Status.EnPassant != nil && p.Status.EnPassant.I == row && p.Status.EnPassant.J == col {
 					enPassantPiecePoint := NewPoint(p.Status.EnPassant.I+1, p.Status.EnPassant.J)
 					if piece.Color == Color_Black {
 						enPassantPiecePoint.I = p.Status.EnPassant.I - 1
@@ -271,12 +229,7 @@ func (p Position) GetPiecePseudoMovements(piece Piece, movements *[]Movement) {
 					*movements = append(*movements,
 						*NewMovement(piece,
 							piece.Point,
-							NewPoint(finalI, finalJ),
-							// p.Status.EnPassant,
-							// p.Status.CanQueenCastling[Color_White],
-							// p.Status.CanKingCastling[Color_White],
-							// p.Status.CanQueenCastling[Color_Black],
-							// p.Status.CanKingCastling[Color_Black],
+							NewPoint(row, col),
 						).WithTakingPiece(pieceAt).WithPawn(false, false))
 				}
 			}
@@ -292,31 +245,24 @@ func (p Position) getOrthogonalPseudoMovements(piece Piece, movements *[]Movemen
 	dirs := [4][2]int{{-1, 0}, {0, 1}, {1, 0}, {0, -1}} // {i, j} -> Top, Right, Bottom, Left
 
 	for _, dir := range dirs {
-		for i, j := piece.Point.I+dir[0], piece.Point.J+dir[1]; i >= 0 && j >= 0 && i < 8 && j < 8; i, j = i+dir[0], j+dir[1] {
-			pieceAt := p.Board.GetPieceAt(i, j)
+		for i, j := int(piece.Point.I)+dir[0], int(piece.Point.J)+dir[1]; i >= 0 && j >= 0 && i < 8 && j < 8; i, j = i+dir[0], j+dir[1] {
+			row := uint8(i)
+			col := uint8(j)
+
+			pieceAt := p.Board.GetPieceAt(row, col)
 
 			if pieceAt.Kind == Kind_None {
 				*movements = append(*movements,
 					*NewMovement(piece,
 						piece.Point,
-						NewPoint(i, j),
-						// p.Status.EnPassant,
-						// p.Status.CanQueenCastling[Color_White],
-						// p.Status.CanKingCastling[Color_White],
-						// p.Status.CanQueenCastling[Color_Black],
-						// p.Status.CanKingCastling[Color_Black],
+						NewPoint(row, col),
 					))
 			} else {
 				if pieceAt.Color != piece.Color {
 					*movements = append(*movements,
 						*NewMovement(piece,
 							piece.Point,
-							NewPoint(i, j),
-							// p.Status.EnPassant,
-							// p.Status.CanQueenCastling[Color_White],
-							// p.Status.CanKingCastling[Color_White],
-							// p.Status.CanQueenCastling[Color_Black],
-							// p.Status.CanKingCastling[Color_Black],
+							NewPoint(row, col),
 						).WithTakingPiece(pieceAt))
 				}
 
@@ -332,31 +278,24 @@ func (p Position) getDiagonalPseudoMovements(piece Piece, movements *[]Movement)
 	dirs := [4][2]int{{-1, -1}, {-1, 1}, {1, 1}, {1, -1}} // {i, j} -> TopLeft, TopRight, BottomRight, BottomLeft
 
 	for _, dir := range dirs {
-		for i, j := piece.Point.I+dir[0], piece.Point.J+dir[1]; i >= 0 && j >= 0 && i < 8 && j < 8; i, j = i+dir[0], j+dir[1] {
-			pieceAt := p.Board.GetPieceAt(i, j)
+		for i, j := int(piece.Point.I)+dir[0], int(piece.Point.J)+dir[1]; i >= 0 && j >= 0 && i < 8 && j < 8; i, j = i+dir[0], j+dir[1] {
+			row := uint8(i)
+			col := uint8(j)
+
+			pieceAt := p.Board.GetPieceAt(row, col)
 
 			if pieceAt.Kind == Kind_None {
 				*movements = append(*movements,
 					*NewMovement(piece,
 						piece.Point,
-						NewPoint(i, j),
-						// p.Status.EnPassant,
-						// p.Status.CanQueenCastling[Color_White],
-						// p.Status.CanKingCastling[Color_White],
-						// p.Status.CanQueenCastling[Color_Black],
-						// p.Status.CanKingCastling[Color_Black],
+						NewPoint(row, col),
 					))
 			} else {
 				if pieceAt.Color != piece.Color {
 					*movements = append(*movements,
 						*NewMovement(piece,
 							piece.Point,
-							NewPoint(i, j),
-							// p.Status.EnPassant,
-							// p.Status.CanQueenCastling[Color_White],
-							// p.Status.CanKingCastling[Color_White],
-							// p.Status.CanQueenCastling[Color_Black],
-							// p.Status.CanKingCastling[Color_Black],
+							NewPoint(row, col),
 						).WithTakingPiece(pieceAt))
 				}
 

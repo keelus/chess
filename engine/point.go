@@ -3,11 +3,10 @@ package engine
 import "fmt"
 
 type Point struct {
-	I int
-	J int
+	I, J uint8
 }
 
-func NewPoint(i, j int) Point {
+func NewPoint(i, j uint8) Point {
 	return Point{
 		I: i,
 		J: j,
