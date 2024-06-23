@@ -136,7 +136,6 @@ func (g *Game) MakeMovement(movement Movement, recomputeLegalMovements bool) {
 		}
 	} else {
 		if movement.MovingPiece.Kind == Kind_Pawn {
-			//movement.MovingPiece.IsPawnFirstMovement = false
 
 			if *movement.PawnIsDoublePointMovement {
 				invertSum := -1
@@ -210,7 +209,6 @@ func (g *Game) MakeMovement(movement Movement, recomputeLegalMovements bool) {
 		// Delete this piece's previous position
 		newPosition.Board[movement.From.I][movement.From.J].Kind = Kind_None
 		newPosition.Board[movement.From.I][movement.From.J].Color = Color_None
-		//newPosition.Board[movement.From.I][movement.From.J].IsPawnFirstMovement = false
 	}
 
 	newPosition.Status.PlayerToMove = Color_White

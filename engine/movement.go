@@ -17,18 +17,6 @@ type Movement struct {
 
 	IsKingSideCastling  *bool
 	IsQueenSideCastling *bool
-
-	// CanWhiteQueenSideCastling bool
-	// CanWhiteKingSideCastling  bool
-	// CanBlackQueenSideCastling bool
-	// CanBlackKingSideCastling  bool
-
-	// // CanKingSideCastling  bool // TODO: These two only in castle or King moves
-	// // CanQueenSideCastling bool
-
-	// EnPassant *Point
-
-	// TODO: To later UNDO a Movement, might be necessary to add more parameters (such as Castling abilities)
 }
 
 func (m *Movement) WithPawnPromotion(newKind Kind) *Movement {
