@@ -82,7 +82,7 @@ func (g *Game) MakeMovement(movement Movement, recomputeLegalMovements bool) {
 	//fmt.Printf("Do: %s\n", movement.ToString())
 	newPosition.Status.EnPassant = nil
 
-	if movement.IsQueenSideCastling != nil || movement.IsKingSideCastling != nil { // Handle castling
+	if movement.IsQueenSideCastling || movement.IsKingSideCastling { // Handle castling
 		newPosition.Status.CastlingRights.QueenSide[movement.MovingPiece.Color] = false
 		newPosition.Status.CastlingRights.KingSide[movement.MovingPiece.Color] = false
 
@@ -95,7 +95,7 @@ func (g *Game) MakeMovement(movement Movement, recomputeLegalMovements bool) {
 		// RECOMMENDATION MAYBE? DONT USE ANY POINTER, ALL VIA POSITION FROM AND TO (WITH COPIES OF TAKING AND MOVING PIECES)
 		// IF DOING THIS, WE HAVE TO SAVE ALSO CASTLING POSITION
 
-		if *movement.IsQueenSideCastling {
+		if movement.IsQueenSideCastling {
 			rookPiece := newPosition.Board[castlingRow][0]
 			kingPiece := newPosition.Board[castlingRow][4]
 
@@ -114,7 +114,7 @@ func (g *Game) MakeMovement(movement Movement, recomputeLegalMovements bool) {
 			// Delete old king
 			newPosition.Board[castlingRow][4].Kind = Kind_None
 			newPosition.Board[castlingRow][4].Color = Color_None
-		} else if *movement.IsKingSideCastling {
+		} else if movement.IsKingSideCastling {
 			rookPiece := newPosition.Board[castlingRow][7]
 			kingPiece := newPosition.Board[castlingRow][4]
 
@@ -137,7 +137,7 @@ func (g *Game) MakeMovement(movement Movement, recomputeLegalMovements bool) {
 	} else {
 		if movement.MovingPiece.Kind == Kind_Pawn {
 
-			if *movement.PawnIsDoublePointMovement {
+			if movement.PawnIsDoublePointMovement {
 				invertSum := -1
 				if movement.MovingPiece.Color == Color_Black {
 					invertSum = +1
@@ -236,13 +236,13 @@ func (g *Game) FilterPseudoMovements(movements *[]Movement) []Movement {
 		// Check this ???
 		// This attack does not have to be evaluated, as its not taking, and pawns cant move diagonally while not attacking
 		// The purpose of this is to, when checking a castling, having the movements (these "attacking but not taking") diagonals
-		if myMovement.PawnIsAttackingButNotTakingDiagonal != nil && *myMovement.PawnIsAttackingButNotTakingDiagonal {
+		if myMovement.PawnIsAttackingButNotTakingDiagonal {
 			continue
 		}
 
 		isCastlingLegal := true
-		if (myMovement.IsQueenSideCastling != nil && *myMovement.IsQueenSideCastling) ||
-			(myMovement.IsKingSideCastling != nil && *myMovement.IsKingSideCastling) {
+		if (myMovement.IsQueenSideCastling) ||
+			(myMovement.IsKingSideCastling) {
 			currentOpponentPseudo := g.CurrentPosition.GetPseudoMovements(opponentColor)
 			for _, opponentMovement := range currentOpponentPseudo {
 				if opponentMovement.IsTakingPiece && opponentMovement.TakingPiece.Kind == Kind_King {
@@ -258,10 +258,10 @@ func (g *Game) FilterPseudoMovements(movements *[]Movement) []Movement {
 			var colFrom, colTo uint8
 
 			// TODO: Hard code positions to less operations
-			if myMovement.IsQueenSideCastling != nil && *myMovement.IsQueenSideCastling {
+			if myMovement.IsQueenSideCastling {
 				colFrom = uint8(int(myMovement.From.J) - 1)
 				colTo = uint8(int(myMovement.From.J) - 2)
-			} else if myMovement.IsKingSideCastling != nil && *myMovement.IsKingSideCastling {
+			} else if myMovement.IsKingSideCastling {
 				colFrom = uint8(int(myMovement.From.J) + 1)
 				colTo = uint8(int(myMovement.From.J) + 2)
 			}

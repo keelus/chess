@@ -27,7 +27,7 @@ func init() {
 	rl.InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Chess game")
 	rl.SetTargetFPS(60)
 
-	engine.LoadTextures()
+	LoadTextures()
 }
 
 func main() {
@@ -109,7 +109,7 @@ func main() {
 
 				if game.GetPieceAt(uint8(i), uint8(j)).Kind != engine.Kind_None {
 					currentPiece := game.GetPieceAt(uint8(i), uint8(j))
-					rl.DrawTexture(engine.GetPieceTexture(currentPiece.Color, currentPiece.Kind), j*CELL_SIZE, i*CELL_SIZE, rl.RayWhite)
+					rl.DrawTexture(GetPieceTexture(currentPiece.Color, currentPiece.Kind), j*CELL_SIZE, i*CELL_SIZE, rl.RayWhite)
 				}
 			}
 		}
