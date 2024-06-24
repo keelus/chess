@@ -4,11 +4,9 @@ func (g *Game) FilterPseudoMovements(movements *[]Movement) []Movement {
 	//beginningColor := b.PlayerToMove
 	filteredMovements := []Movement{}
 
+	// Ensure we use this colors (and not others, as CurrentPosition will change on GetPseudoMovements)
 	allyColor := g.currentPosition.Status.PlayerToMove
-	opponentColor := Color_White
-	if g.currentPosition.Status.PlayerToMove == Color_White {
-		opponentColor = Color_Black
-	}
+	opponentColor := g.currentPosition.Status.PlayerToMove.Opposite()
 
 	for _, myMovement := range *movements {
 		// TODO: DO a simulateMovement

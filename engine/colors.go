@@ -22,3 +22,12 @@ func ColorFromRune(color rune) Color {
 	}
 	return '_'
 }
+
+func (c Color) Opposite() Color {
+	if c == Color_White {
+		return Color_Black
+	} else if c == Color_Black {
+		return Color_White
+	}
+	return Color_None
+}

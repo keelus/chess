@@ -64,18 +64,13 @@ func (p Position) GetPiecePseudoMovements(piece Piece, movements *[]Movement, do
 			}
 		}
 
-		opponentColor := Color_White
-		if piece.Color == Color_White {
-			opponentColor = Color_Black
-		}
-
 		if doCastlingCheck {
 			castlingRow := 7
 			if piece.Color == Color_Black {
 				castlingRow = 0
 			}
 
-			_, enemyAttackBoard := p.GetPseudoMovements(opponentColor, false)
+			_, enemyAttackBoard := p.GetPseudoMovements(piece.Color.Opposite(), false)
 			// If king is not in check, continue
 			if enemyAttackBoard[piece.Square.I][piece.Square.J] == false {
 				if p.Status.CastlingRights.QueenSide[piece.Color] {
