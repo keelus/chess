@@ -14,7 +14,8 @@ type Game struct {
 
 	outcome Outcome
 
-	movementHistory []Movement //only used by api, not perft
+	positionMap     map[string]int // only used by api, not perft (as a map of fen positions is too slow to compute)
+	movementHistory []Movement     //only used by api, not perft
 }
 
 func NewGame(fen string) Game {
@@ -25,6 +26,8 @@ func NewGame(fen string) Game {
 	newGame := Game{
 		positions:       make([]Position, 0),
 		currentPosition: newPositionFromFen(fen),
+
+		positionMap: make(map[string]int),
 
 		outcome: Outcome_None,
 		//HasEnded: false,

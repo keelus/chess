@@ -14,7 +14,7 @@ func (g *Game) simulateMovement(movement Movement) {
 }
 
 func (g *Game) undoSimulatedMovement() {
-	g.undoMovement(false)
+	g.undoMovement()
 }
 
 func (g *Game) forceMovement(movement Movement, recomputeLegalMovements bool) {
@@ -164,6 +164,22 @@ func (g *Game) forceMovement(movement Movement, recomputeLegalMovements bool) {
 	g.positions = append(g.positions, g.currentPosition)
 	g.currentPosition = newPosition
 
+	if recomputeLegalMovements {
+		if _, ok := g.positionMap[g.currentPosition.Fen()]; !ok {
+			g.positionMap[g.currentPosition.Fen()] = 1
+		} else {
+			g.positionMap[g.currentPosition.Fen()]++
+			//fmt.Println(g.positionMap[g.currentPosition.Fen()])
+			// if recomputeLegalMovements {
+			// 	fmt.Printf("%s has %d\n", g.currentPosition.Fen(), g.positionMap[g.currentPosition.Fen()])
+			// }
+			if g.positionMap[g.currentPosition.Fen()] == 3 {
+				//fmt.Printf("%s ends with %d\n", g.currentPosition.Fen(), g.positionMap[g.currentPosition.Fen()])
+				g.Terminate(Outcome_Draw_3Rep)
+			}
+		}
+	}
+
 	// Recomputing will take place:
 	// 		- After making a move (via game.MakeMove())
 	// 		- Manually via computeLegalMovements(), called by Perft
@@ -198,8 +214,6 @@ func (g *Game) forceMovement(movement Movement, recomputeLegalMovements bool) {
 		} else if g.currentPosition.Status.HalfmoveClock >= 100 {
 			g.Terminate(Outcome_Draw_50Move)
 		}
-
-		fmt.Println(g.currentPosition.Status.HalfmoveClock)
 	}
 }
 
@@ -207,16 +221,12 @@ func (g *Game) Terminate(outcome Outcome) {
 	g.outcome = outcome
 }
 
-func (g *Game) undoMovement(recomputeLegalMovements bool) {
+func (g *Game) undoMovement() {
 	if len(g.positions) == 0 {
 		fmt.Println("Can't undo more.")
 		return
 	} else {
 		g.currentPosition = g.positions[len(g.positions)-1]
 		g.positions = g.positions[:len(g.positions)-1]
-
-		if recomputeLegalMovements {
-			g.ComputeLegalMovements()
-		}
 	}
 }
