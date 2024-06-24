@@ -26,9 +26,9 @@ Currently, the tests are only compared using the `nodes` count.
 | Initial position    | ✅       | ✅        | ✅        | ✅        | ✅        | ❓        |
 | Position 2          | ✅       | ✅        | ✅        | ✅        | ✅        | ❓        |
 | Position 3          | ✅       | ✅        | ✅        | ✅        | ✅        | ✅        |
-| Position 4          | ✅       | ✅        | ✅        | ✅        | ❓         | ❓        |
-| Position 5          | ✅       | ✅        | ✅        | ✅        | ❓         | ❓        |
-| Position 6          | ✅       | ✅        | ✅        | ✅        | ❓         | ❓        |
+| Position 4          | ✅       | ✅        | ✅        | ✅        | ✅        | ❓        |
+| Position 5          | ✅       | ✅        | ✅        | ✅        | ✅        | ❓        |
+| Position 6          | ✅       | ✅        | ✅        | ✅        | ✅        | ❓        |
 
 To make a test or bench a given `.epd` file (check `engine/game_test.go` to see the file format and command arguments to the test):
 

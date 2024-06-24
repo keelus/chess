@@ -227,62 +227,22 @@ func (g *Game) FilterPseudoMovements(movements *[]Movement) []Movement {
 	//beginningColor := b.PlayerToMove
 	filteredMovements := []Movement{}
 
+	allyColor := g.CurrentPosition.Status.PlayerToMove
 	opponentColor := Color_White
 	if g.CurrentPosition.Status.PlayerToMove == Color_White {
 		opponentColor = Color_Black
 	}
 
 	for _, myMovement := range *movements {
-		// Check this ???
-		// This attack does not have to be evaluated, as its not taking, and pawns cant move diagonally while not attacking
-		// The purpose of this is to, when checking a castling, having the movements (these "attacking but not taking") diagonals
-		if myMovement.PawnIsAttackingButNotTakingDiagonal {
-			continue
-		}
-
-		isCastlingLegal := true
-		if (myMovement.IsQueenSideCastling) ||
-			(myMovement.IsKingSideCastling) {
-			currentOpponentPseudo := g.CurrentPosition.GetPseudoMovements(opponentColor)
-			for _, opponentMovement := range currentOpponentPseudo {
-				if opponentMovement.IsTakingPiece && opponentMovement.TakingPiece.Kind == Kind_King {
-					isCastlingLegal = false
-					break
-				}
-			}
-			if !isCastlingLegal {
-				continue
-			}
-
-			// Cols that must not be being attacked
-			var colFrom, colTo uint8
-
-			// TODO: Hard code positions to less operations
-			if myMovement.IsQueenSideCastling {
-				colFrom = uint8(int(myMovement.From.J) - 1)
-				colTo = uint8(int(myMovement.From.J) - 2)
-			} else if myMovement.IsKingSideCastling {
-				colFrom = uint8(int(myMovement.From.J) + 1)
-				colTo = uint8(int(myMovement.From.J) + 2)
-			}
-
-			isCastlingLegal = g.CurrentPosition.CheckForCastlingLegal(myMovement.From.I, colFrom, colTo, currentOpponentPseudo)
-		}
-
-		if !isCastlingLegal {
-			continue
-		}
-
 		g.MakeMovement(myMovement, false)
-		opponentPseudoMovements := g.CurrentPosition.GetPseudoMovements(opponentColor)
+		_, opponentAttackMatrix := g.CurrentPosition.GetPseudoMovements(opponentColor, false)
 
-		weGetChecked := g.CurrentPosition.CheckForCheck(opponentPseudoMovements)
+		weGetChecked := g.CurrentPosition.CheckForCheck(allyColor, &opponentAttackMatrix)
 
 		if !weGetChecked {
 			filteredMovements = append(filteredMovements, myMovement)
 		}
-		// Check for check
-		//g.UndoMovement(myMovement)
+
 		g.UndoMovement(false)
 	}
 
@@ -293,13 +253,17 @@ func (g *Game) FilterPseudoMovements(movements *[]Movement) []Movement {
 	return filteredMovements
 }
 
-func (p Position) CheckForCheck(opponentPseudoMovements []Movement) bool {
-	for _, movement := range opponentPseudoMovements {
-		if movement.IsTakingPiece && movement.TakingPiece.Kind == Kind_King {
-			return true
+// TODO: Save king's positions (in Position{}, or get them at GetPseudoMovements() to reuse the loop, if possible)
+func (p Position) CheckForCheck(allyColor Color, opponentAttackMatrix *[8][8]bool) bool {
+	for i := uint8(0); i < 8; i++ {
+		for j := uint8(0); j < 8; j++ {
+			if p.Board[i][j].Kind == Kind_King && p.Board[i][j].Color == allyColor {
+				return opponentAttackMatrix[i][j]
+			}
 		}
 	}
 
+	// Won't get here
 	return false
 }
 

@@ -28,7 +28,7 @@ func NewGame(fen string) Game {
 }
 
 func (g *Game) ComputeLegalMovements() {
-	pseudoMovements := g.CurrentPosition.GetPseudoMovements(g.CurrentPosition.Status.PlayerToMove)
+	pseudoMovements, _ := g.CurrentPosition.GetPseudoMovements(g.CurrentPosition.Status.PlayerToMove, true)
 	legalMovements := g.FilterPseudoMovements(&pseudoMovements)
 	g.ComputedLegalMovements = legalMovements
 }
@@ -40,6 +40,10 @@ func (g *Game) UndoMovement(recomputeLegalMovements bool) {
 	} else {
 		g.CurrentPosition = g.Positions[len(g.Positions)-1]
 		g.Positions = g.Positions[:len(g.Positions)-1]
+
+		if recomputeLegalMovements {
+			g.ComputeLegalMovements()
+		}
 	}
 }
 
