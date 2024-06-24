@@ -187,20 +187,13 @@ func (g *Game) forceMovement(movement Movement, recomputeLegalMovements bool) {
 		g.ComputeLegalMovements()
 
 		if len(g.computedLegalMovements) == 0 {
-			isGettingChecked := false
-
 			opponentColor := Color_White
 			if g.currentPosition.Status.PlayerToMove == Color_White {
 				opponentColor = Color_Black
 			}
-			_, enemyAttackMatrix := g.currentPosition.GetPseudoMovements(opponentColor, false)
-			for i := uint8(0); i < 8; i++ {
-				for j := uint8(0); j < 8; j++ {
-					if enemyAttackMatrix[i][j] && g.currentPosition.Board[i][j].Kind == Kind_King && g.currentPosition.Board[i][j].Color == g.currentPosition.Status.PlayerToMove {
-						isGettingChecked = true
-					}
-				}
-			}
+			_, opponentAttackMatrix := g.currentPosition.GetPseudoMovements(opponentColor, false)
+
+			isGettingChecked := g.currentPosition.checkForCheck(g.currentPosition.Status.PlayerToMove, &opponentAttackMatrix)
 
 			if isGettingChecked {
 				if g.currentPosition.Status.PlayerToMove == Color_White {
