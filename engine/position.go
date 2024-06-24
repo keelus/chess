@@ -29,18 +29,27 @@ func (cr *CastlingRights) clone() CastlingRights {
 }
 
 type PositionStatus struct {
-	PlayerToMove Color
+	PlayerToMove    Color
+	CastlingRights  CastlingRights
+	EnPassant       *Square
+	HalfmoveClock   uint8
+	FullmoveCounter uint
+}
 
-	CastlingRights CastlingRights
-
-	EnPassant *Square
+func (p *Position) GetHalfmoveClock() uint8 {
+	return p.Status.HalfmoveClock
+}
+func (p *Position) GetFullmoveCounter() uint {
+	return p.Status.FullmoveCounter
 }
 
 func (ps *PositionStatus) clone() PositionStatus {
 	return PositionStatus{
-		PlayerToMove:   ps.PlayerToMove,
-		CastlingRights: ps.CastlingRights.clone(),
-		EnPassant:      ps.EnPassant,
+		PlayerToMove:    ps.PlayerToMove,
+		CastlingRights:  ps.CastlingRights.clone(),
+		EnPassant:       ps.EnPassant,
+		HalfmoveClock:   ps.HalfmoveClock,
+		FullmoveCounter: ps.FullmoveCounter,
 	}
 }
 
@@ -66,7 +75,9 @@ func newPositionFromFen(fen string) Position {
 				},
 			},
 
-			EnPassant: nil, //TODO
+			EnPassant:       nil, //TODO
+			HalfmoveClock:   parsedFen.HalfmoveClock,
+			FullmoveCounter: parsedFen.FulmoveCounter,
 		},
 	}
 }

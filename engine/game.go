@@ -12,6 +12,8 @@ type Game struct {
 
 	computedLegalMovements []Movement
 
+	outcome Outcome
+
 	movementHistory []Movement //only used by api, not perft
 }
 
@@ -24,6 +26,7 @@ func NewGame(fen string) Game {
 		positions:       make([]Position, 0),
 		currentPosition: newPositionFromFen(fen),
 
+		outcome: Outcome_None,
 		//HasEnded: false,
 	}
 
@@ -142,5 +145,5 @@ const (
 )
 
 func (g *Game) Outcome() Outcome {
-	return Outcome_None
+	return g.outcome
 }

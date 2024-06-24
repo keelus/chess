@@ -9,7 +9,9 @@ import (
 type FenData struct {
 	PlacementData [8]string
 	ActiveColor   Color
-	Fullmoves     int
+
+	HalfmoveClock  uint8
+	FulmoveCounter uint
 
 	WhiteCanKingSideCastling  bool
 	WhiteCanQueenSideCastling bool
@@ -55,17 +57,22 @@ func parseFen(fen string) (FenData, error) {
 	}
 
 	// TODO: En passant (parts[3])
-	// TODO: Halfmove clock (parts[4])
 
-	fullmoves, err := strconv.ParseInt(parts[5], 10, 0)
-	if err != nil || fullmoves < 1 {
+	halfmoveClock, err := strconv.ParseUint(parts[4], 10, 0)
+	if err != nil {
+		return FenData{}, errors.New("The provided FEN does not have a valid halfmove number.")
+	}
+
+	fullmoveCounter, err := strconv.ParseUint(parts[5], 10, 0)
+	if err != nil || fullmoveCounter < 1 {
 		return FenData{}, errors.New("The provided FEN does not have a valid fullmove number.")
 	}
 
 	return FenData{
-		PlacementData: [8]string(lacementParts),
-		ActiveColor:   ColorFromRune(activeColor),
-		Fullmoves:     int(fullmoves),
+		PlacementData:  [8]string(lacementParts),
+		ActiveColor:    ColorFromRune(activeColor),
+		HalfmoveClock:  uint8(halfmoveClock),
+		FulmoveCounter: uint(fullmoveCounter),
 
 		WhiteCanKingSideCastling:  whiteCanKingSideCastling,
 		WhiteCanQueenSideCastling: whiteCanQueenSideCastling,

@@ -145,16 +145,66 @@ func (g *Game) forceMovement(movement Movement, recomputeLegalMovements bool) {
 		newPosition.Board[movement.from.I][movement.from.J].Color = Color_None
 	}
 
-	newPosition.Status.PlayerToMove = Color_White
-	if movement.movingPiece.Color == Color_White {
-		newPosition.Status.PlayerToMove = Color_Black
+	// Handle halfmove clock
+	if movement.movingPiece.Kind == Kind_Pawn || movement.isTakingPiece {
+		newPosition.Status.HalfmoveClock = 0
+	} else {
+		newPosition.Status.HalfmoveClock++
 	}
 
+	// Handle fullmove counter
+	if movement.movingPiece.Color == Color_White {
+		newPosition.Status.PlayerToMove = Color_Black
+	} else if movement.movingPiece.Color == Color_Black {
+		newPosition.Status.PlayerToMove = Color_White
+		newPosition.Status.FullmoveCounter++
+	}
+
+	// Switch positions
 	g.positions = append(g.positions, g.currentPosition)
 	g.currentPosition = newPosition
+
+	// Recomputing will take place:
+	// 		- After making a move (via game.MakeMove())
+	// 		- Manually via computeLegalMovements(), called by Perft
 	if recomputeLegalMovements {
 		g.ComputeLegalMovements()
+
+		if len(g.computedLegalMovements) == 0 {
+			isGettingChecked := false
+
+			opponentColor := Color_White
+			if g.currentPosition.Status.PlayerToMove == Color_White {
+				opponentColor = Color_Black
+			}
+			_, enemyAttackMatrix := g.currentPosition.GetPseudoMovements(opponentColor, false)
+			for i := uint8(0); i < 8; i++ {
+				for j := uint8(0); j < 8; j++ {
+					if enemyAttackMatrix[i][j] && g.currentPosition.Board[i][j].Kind == Kind_King && g.currentPosition.Board[i][j].Color == g.currentPosition.Status.PlayerToMove {
+						isGettingChecked = true
+					}
+				}
+			}
+
+			if isGettingChecked {
+				if g.currentPosition.Status.PlayerToMove == Color_White {
+					g.Terminate(Outcome_Checkmate_Black)
+				} else {
+					g.Terminate(Outcome_Checkmate_White)
+				}
+			} else {
+				g.Terminate(Outcome_Draw_Stalemate)
+			}
+		} else if g.currentPosition.Status.HalfmoveClock >= 100 {
+			g.Terminate(Outcome_Draw_50Move)
+		}
+
+		fmt.Println(g.currentPosition.Status.HalfmoveClock)
 	}
+}
+
+func (g *Game) Terminate(outcome Outcome) {
+	g.outcome = outcome
 }
 
 func (g *Game) undoMovement(recomputeLegalMovements bool) {
