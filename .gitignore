@@ -1,2 +1,3 @@
-/engine/perft_tests/
-/engine/*.out
+/perft_tests/
+/temporaltesting/
+*.out
