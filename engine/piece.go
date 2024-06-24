@@ -4,18 +4,17 @@ type Piece struct {
 	Color Color
 	Kind  Kind
 
-	Point Point
+	Square Square
 }
 
-func NewPiece(color Color, kind Kind, pos Point) Piece {
+func newPiece(color Color, kind Kind, pos Square) Piece {
 	return Piece{
-		Color: color,
-		Kind:  kind,
-		Point: pos,
+		Color:  color,
+		Kind:   kind,
+		Square: pos,
 	}
 }
 
-func (p Piece) DeepCopy() Piece {
-	newPiece := NewPiece(p.Color, p.Kind, NewPoint(p.Point.I, p.Point.J))
-	return newPiece
+func (p Piece) clone() Piece {
+	return newPiece(p.Color, p.Kind, newSquare(p.Square.I, p.Square.J))
 }

@@ -17,19 +17,18 @@ func (g *Game) Perft(initialDepth, depth int, currentMove string, positionVerbos
 	}
 
 	g.ComputeLegalMovements()
-	moveList := g.GetLegalMovements()
+	moveList := g.computedLegalMovements
 	nMoves = len(moveList)
 
 	for i = 0; i < nMoves; i++ {
-		g.MakeMovement(moveList[i], false)
-		nodes += g.Perft(initialDepth, depth-1, moveList[i].ToAlgebraic(), positionVerbose)
-		//g.UndoMovement(moveList[i])
-		g.UndoMovement(false)
+		g.simulateMovement(moveList[i])
+		nodes += g.Perft(initialDepth, depth-1, moveList[i].Algebraic(), positionVerbose)
+		g.undoSimulatedMovement()
 	}
 
 	if positionVerbose && depth == initialDepth-1 && currentMove != "" {
 		fmt.Printf("\t%s: %d\n", currentMove, nodes)
-		fmt.Printf("\t^ %s\n", g.CurrentPosition.ToFen())
+		fmt.Printf("\t^ %s\n", g.currentPosition.Fen())
 	}
 
 	return nodes

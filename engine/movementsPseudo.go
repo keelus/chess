@@ -39,26 +39,26 @@ func (p Position) GetPiecePseudoMovements(piece Piece, movements *[]Movement, do
 					continue
 				}
 
-				finalI, finalJ := int8(piece.Point.I)+i, int8(piece.Point.J)+j
+				finalI, finalJ := int8(piece.Square.I)+i, int8(piece.Square.J)+j
 				if finalI >= 0 && finalJ >= 0 && finalI < 8 && finalJ < 8 {
 					row := uint8(finalI)
 					col := uint8(finalJ)
-					pieceAt := p.Board.GetPieceAt(uint8(finalI), uint8(finalJ))
+					pieceAt := p.Board[uint8(finalI)][uint8(finalJ)]
 
 					if pieceAt.Kind == Kind_None {
 						attackMatrix[row][col] = true
 						*movements = append(*movements,
-							*NewMovement(piece,
-								piece.Point,
-								NewPoint(row, col),
+							*newMovement(piece,
+								piece.Square,
+								newSquare(row, col),
 							))
 					} else if pieceAt.Color != piece.Color {
 						attackMatrix[row][col] = true
 						*movements = append(*movements,
-							*NewMovement(piece,
-								piece.Point,
-								NewPoint(row, col),
-							).WithTakingPiece(pieceAt))
+							*newMovement(piece,
+								piece.Square,
+								newSquare(row, col),
+							).withTakingPiece(pieceAt))
 					}
 				}
 			}
@@ -77,12 +77,12 @@ func (p Position) GetPiecePseudoMovements(piece Piece, movements *[]Movement, do
 
 			_, enemyAttackBoard := p.GetPseudoMovements(opponentColor, false)
 			// If king is not in check, continue
-			if enemyAttackBoard[piece.Point.I][piece.Point.J] == false {
+			if enemyAttackBoard[piece.Square.I][piece.Square.J] == false {
 				if p.Status.CastlingRights.QueenSide[piece.Color] {
 					// Check if space to rook is empty
 					canCastle := true
-					for j := piece.Point.J - 1; j >= piece.Point.J-3; j-- {
-						if p.Board.GetPieceAt(piece.Point.I, j).Kind != Kind_None {
+					for j := piece.Square.J - 1; j >= piece.Square.J-3; j-- {
+						if p.Board[piece.Square.I][j].Kind != Kind_None {
 							canCastle = false
 							break
 						}
@@ -94,10 +94,10 @@ func (p Position) GetPiecePseudoMovements(piece Piece, movements *[]Movement, do
 						// On the left of the King, in d1 and c1 [castlingRow, 2], [castlingRow, 3]
 						if enemyAttackBoard[castlingRow][2] == false && enemyAttackBoard[castlingRow][3] == false {
 							*movements = append(*movements,
-								*NewMovement(piece,
-									piece.Point,
-									NewPoint(piece.Point.I, piece.Point.J-2),
-								).WithCastling(true, false))
+								*newMovement(piece,
+									piece.Square,
+									newSquare(piece.Square.I, piece.Square.J-2),
+								).withCastling(true, false))
 						}
 					}
 				}
@@ -105,8 +105,8 @@ func (p Position) GetPiecePseudoMovements(piece Piece, movements *[]Movement, do
 				if p.Status.CastlingRights.KingSide[piece.Color] {
 					// Check if space to rook is empty
 					canCastle := true
-					for j := piece.Point.J + 1; j < 7; j++ {
-						if p.Board.GetPieceAt(piece.Point.I, j).Kind != Kind_None {
+					for j := piece.Square.J + 1; j < 7; j++ {
+						if p.Board[piece.Square.I][j].Kind != Kind_None {
 							canCastle = false
 							break
 						}
@@ -118,10 +118,10 @@ func (p Position) GetPiecePseudoMovements(piece Piece, movements *[]Movement, do
 						// On the right of the King, in f1 and g1 [castlingRow, 5], [castlingRow, 6]
 						if enemyAttackBoard[castlingRow][5] == false && enemyAttackBoard[castlingRow][6] == false {
 							*movements = append(*movements,
-								*NewMovement(piece,
-									piece.Point,
-									NewPoint(piece.Point.I, piece.Point.J+2),
-								).WithCastling(false, true))
+								*newMovement(piece,
+									piece.Square,
+									newSquare(piece.Square.I, piece.Square.J+2),
+								).withCastling(false, true))
 						}
 					}
 				}
@@ -133,28 +133,28 @@ func (p Position) GetPiecePseudoMovements(piece Piece, movements *[]Movement, do
 		dirs := [8][2]int{{-2, -1}, {-2, 1}, {-1, 2}, {1, 2}, {2, 1}, {2, -1}, {1, -2}, {-1, -2}} // {i, j} -> From TopRight, clockwise untill TopRight (bottom left)
 
 		for _, dir := range dirs {
-			finalI, finalJ := int(piece.Point.I)+dir[0], int(piece.Point.J)+dir[1]
+			finalI, finalJ := int(piece.Square.I)+dir[0], int(piece.Square.J)+dir[1]
 
 			if finalI >= 0 && finalJ >= 0 && finalI < 8 && finalJ < 8 {
 				row := uint8(finalI)
 				col := uint8(finalJ)
 
-				pieceAt := p.Board.GetPieceAt(row, col)
+				pieceAt := p.Board[row][col]
 
 				if pieceAt.Kind == Kind_None {
 					attackMatrix[row][col] = true
 					*movements = append(*movements,
-						*NewMovement(piece,
-							piece.Point,
-							NewPoint(row, col),
+						*newMovement(piece,
+							piece.Square,
+							newSquare(row, col),
 						))
 				} else if pieceAt.Color != piece.Color {
 					attackMatrix[row][col] = true
 					*movements = append(*movements,
-						*NewMovement(piece,
-							piece.Point,
-							NewPoint(row, col),
-						).WithTakingPiece(pieceAt))
+						*newMovement(piece,
+							piece.Square,
+							newSquare(row, col),
+						).withTakingPiece(pieceAt))
 				}
 			}
 		}
@@ -173,7 +173,7 @@ func (p Position) GetPiecePseudoMovements(piece Piece, movements *[]Movement, do
 		}
 
 		maxDistance := -2
-		if piece.Point.I != startPawnRow {
+		if piece.Square.I != startPawnRow {
 			maxDistance = -1
 		}
 
@@ -185,10 +185,10 @@ func (p Position) GetPiecePseudoMovements(piece Piece, movements *[]Movement, do
 
 		// Straight line
 		for i := -1; i >= maxDistance; i-- {
-			finalI := int(piece.Point.I) + i*invertMult
+			finalI := int(piece.Square.I) + i*invertMult
 			if finalI >= 0 && finalI < 8 {
 				row := uint8(finalI)
-				pieceAt := p.Board.GetPieceAt(row, piece.Point.J)
+				pieceAt := p.Board[row][piece.Square.J]
 				if pieceAt.Kind != Kind_None {
 					break
 				}
@@ -196,17 +196,17 @@ func (p Position) GetPiecePseudoMovements(piece Piece, movements *[]Movement, do
 				if finalI == promotionRow {
 					for _, kind := range promotingKinds {
 						*movements = append(*movements,
-							*NewMovement(piece,
-								piece.Point,
-								NewPoint(row, piece.Point.J),
-							).WithPawn(i == -2, false).WithPawnPromotion(kind))
+							*newMovement(piece,
+								piece.Square,
+								newSquare(row, piece.Square.J),
+							).withPawn(i == -2).withPawnPromotion(kind))
 					}
 				} else {
 					*movements = append(*movements,
-						*NewMovement(piece,
-							piece.Point,
-							NewPoint(row, piece.Point.J),
-						).WithPawn(i == -2, false))
+						*newMovement(piece,
+							piece.Square,
+							newSquare(row, piece.Square.J),
+						).withPawn(i == -2))
 				}
 			}
 		}
@@ -214,12 +214,12 @@ func (p Position) GetPiecePseudoMovements(piece Piece, movements *[]Movement, do
 		dirs := [2][2]int{{-1, -1}, {-1, 1}}
 
 		for _, dir := range dirs {
-			finalI, finalJ := int(piece.Point.I)+dir[0]*invertMult, int(piece.Point.J)+dir[1]*invertMult
+			finalI, finalJ := int(piece.Square.I)+dir[0]*invertMult, int(piece.Square.J)+dir[1]*invertMult
 			if finalI >= 0 && finalJ >= 0 && finalI < 8 && finalJ < 8 {
 				row := uint8(finalI)
 				col := uint8(finalJ)
 
-				pieceAt := p.Board.GetPieceAt(row, col)
+				pieceAt := p.Board[row][col]
 				// TODO: Pawn attacking castling could be done in a different way:
 				// PseudoMovements returns if attackingQueen, and if attackingKing (if any piece is) so is faster
 
@@ -228,18 +228,18 @@ func (p Position) GetPiecePseudoMovements(piece Piece, movements *[]Movement, do
 						for _, kind := range promotingKinds {
 							attackMatrix[row][col] = true
 							*movements = append(*movements,
-								*NewMovement(piece,
-									piece.Point,
-									NewPoint(row, col),
-								).WithTakingPiece(pieceAt).WithPawn(false, false).WithPawnPromotion(kind))
+								*newMovement(piece,
+									piece.Square,
+									newSquare(row, col),
+								).withTakingPiece(pieceAt).withPawn(false).withPawnPromotion(kind))
 						}
 					} else {
 						attackMatrix[row][col] = true
 						*movements = append(*movements,
-							*NewMovement(piece,
-								piece.Point,
-								NewPoint(row, col),
-							).WithTakingPiece(pieceAt).WithPawn(false, false))
+							*newMovement(piece,
+								piece.Square,
+								newSquare(row, col),
+							).withTakingPiece(pieceAt).withPawn(false))
 					}
 				} else {
 					// If there is no piece in the diagonal, we cannot move to it, but mark the position as being attacked
@@ -247,19 +247,19 @@ func (p Position) GetPiecePseudoMovements(piece Piece, movements *[]Movement, do
 				}
 
 				if pieceAt.Kind == Kind_None && p.Status.EnPassant != nil && p.Status.EnPassant.I == row && p.Status.EnPassant.J == col {
-					enPassantPiecePoint := NewPoint(p.Status.EnPassant.I+1, p.Status.EnPassant.J)
+					enPassantPieceSquare := newSquare(p.Status.EnPassant.I+1, p.Status.EnPassant.J)
 					if piece.Color == Color_Black {
-						enPassantPiecePoint.I = p.Status.EnPassant.I - 1
+						enPassantPieceSquare.I = p.Status.EnPassant.I - 1
 					}
 
-					pieceAt := p.Board.GetPieceAt(enPassantPiecePoint.I, enPassantPiecePoint.J)
+					pieceAt := p.Board[enPassantPieceSquare.I][enPassantPieceSquare.J]
 
 					attackMatrix[row][col] = true
 					*movements = append(*movements,
-						*NewMovement(piece,
-							piece.Point,
-							NewPoint(row, col),
-						).WithTakingPiece(pieceAt).WithPawn(false, false))
+						*newMovement(piece,
+							piece.Square,
+							newSquare(row, col),
+						).withTakingPiece(pieceAt).withPawn(false))
 				}
 			}
 		}
@@ -274,27 +274,27 @@ func (p Position) getOrthogonalPseudoMovements(piece Piece, movements *[]Movemen
 	dirs := [4][2]int{{-1, 0}, {0, 1}, {1, 0}, {0, -1}} // {i, j} -> Top, Right, Bottom, Left
 
 	for _, dir := range dirs {
-		for i, j := int(piece.Point.I)+dir[0], int(piece.Point.J)+dir[1]; i >= 0 && j >= 0 && i < 8 && j < 8; i, j = i+dir[0], j+dir[1] {
+		for i, j := int(piece.Square.I)+dir[0], int(piece.Square.J)+dir[1]; i >= 0 && j >= 0 && i < 8 && j < 8; i, j = i+dir[0], j+dir[1] {
 			row := uint8(i)
 			col := uint8(j)
 
-			pieceAt := p.Board.GetPieceAt(row, col)
+			pieceAt := p.Board[row][col]
 
 			if pieceAt.Kind == Kind_None {
 				attackMatrix[row][col] = true
 				*movements = append(*movements,
-					*NewMovement(piece,
-						piece.Point,
-						NewPoint(row, col),
+					*newMovement(piece,
+						piece.Square,
+						newSquare(row, col),
 					))
 			} else {
 				if pieceAt.Color != piece.Color {
 					attackMatrix[row][col] = true
 					*movements = append(*movements,
-						*NewMovement(piece,
-							piece.Point,
-							NewPoint(row, col),
-						).WithTakingPiece(pieceAt))
+						*newMovement(piece,
+							piece.Square,
+							newSquare(row, col),
+						).withTakingPiece(pieceAt))
 				}
 
 				break
@@ -309,27 +309,27 @@ func (p Position) getDiagonalPseudoMovements(piece Piece, movements *[]Movement,
 	dirs := [4][2]int{{-1, -1}, {-1, 1}, {1, 1}, {1, -1}} // {i, j} -> TopLeft, TopRight, BottomRight, BottomLeft
 
 	for _, dir := range dirs {
-		for i, j := int(piece.Point.I)+dir[0], int(piece.Point.J)+dir[1]; i >= 0 && j >= 0 && i < 8 && j < 8; i, j = i+dir[0], j+dir[1] {
+		for i, j := int(piece.Square.I)+dir[0], int(piece.Square.J)+dir[1]; i >= 0 && j >= 0 && i < 8 && j < 8; i, j = i+dir[0], j+dir[1] {
 			row := uint8(i)
 			col := uint8(j)
 
-			pieceAt := p.Board.GetPieceAt(row, col)
+			pieceAt := p.Board[row][col]
 
 			if pieceAt.Kind == Kind_None {
 				attackMatrix[row][col] = true
 				*movements = append(*movements,
-					*NewMovement(piece,
-						piece.Point,
-						NewPoint(row, col),
+					*newMovement(piece,
+						piece.Square,
+						newSquare(row, col),
 					))
 			} else {
 				if pieceAt.Color != piece.Color {
 					attackMatrix[row][col] = true
 					*movements = append(*movements,
-						*NewMovement(piece,
-							piece.Point,
-							NewPoint(row, col),
-						).WithTakingPiece(pieceAt))
+						*newMovement(piece,
+							piece.Square,
+							newSquare(row, col),
+						).withTakingPiece(pieceAt))
 				}
 
 				break

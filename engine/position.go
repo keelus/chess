@@ -2,7 +2,6 @@ package engine
 
 import (
 	"fmt"
-	"unicode"
 )
 
 type Position struct {
@@ -16,7 +15,7 @@ type CastlingRights struct {
 	KingSide  map[Color]bool
 }
 
-func (cr *CastlingRights) DeepCopy() CastlingRights {
+func (cr *CastlingRights) clone() CastlingRights {
 	return CastlingRights{
 		QueenSide: map[Color]bool{
 			Color_White: cr.QueenSide[Color_White],
@@ -34,25 +33,25 @@ type PositionStatus struct {
 
 	CastlingRights CastlingRights
 
-	EnPassant *Point
+	EnPassant *Square
 }
 
-func (ps *PositionStatus) DeepCopy() PositionStatus {
+func (ps *PositionStatus) clone() PositionStatus {
 	return PositionStatus{
 		PlayerToMove:   ps.PlayerToMove,
-		CastlingRights: ps.CastlingRights.DeepCopy(),
+		CastlingRights: ps.CastlingRights.clone(),
 		EnPassant:      ps.EnPassant,
 	}
 }
 
-func NewPositionFromFen(fen string) Position {
+func newPositionFromFen(fen string) Position {
 	parsedFen, err := parseFen(fen)
 	if err != nil {
 		panic(err)
 	}
 
 	return Position{
-		Board: NewBoardFromFen(parsedFen.PlacementData),
+		Board: newBoardFromFen(parsedFen.PlacementData),
 		Status: PositionStatus{
 			PlayerToMove: parsedFen.ActiveColor,
 
@@ -73,37 +72,10 @@ func NewPositionFromFen(fen string) Position {
 }
 
 // TODO: Complete
-func (p Position) ToFen() string {
-	dataFen := ""
-	spaceAccum := 0
+func (p Position) Fen() string {
+	boardFen := p.Board.Fen()
 
-	for i := 0; i < 8; i++ {
-		for j := 0; j < 8; j++ {
-			if p.Board[i][j].Kind == Kind_None {
-				spaceAccum++
-			} else {
-				if spaceAccum > 0 {
-					dataFen = fmt.Sprintf("%s%d", dataFen, spaceAccum)
-					spaceAccum = 0
-				}
-				kindRune := p.Board[i][j].Kind.ToRune()
-				if p.Board[i][j].Color == Color_White {
-					kindRune = unicode.ToUpper(kindRune)
-				}
-				dataFen = fmt.Sprintf("%s%c", dataFen, kindRune)
-			}
-		}
-
-		if spaceAccum > 0 {
-			dataFen = fmt.Sprintf("%s%d", dataFen, spaceAccum)
-			spaceAccum = 0
-		}
-		dataFen = fmt.Sprintf("%s/", dataFen)
-	}
-
-	dataFen = fmt.Sprintf("%s", dataFen[:len(dataFen)-1])
-
-	dataFen = fmt.Sprintf("%s %c ", dataFen, p.Status.PlayerToMove.ToRune())
+	dataFen := fmt.Sprintf("%s %c ", boardFen, p.Status.PlayerToMove.ToRune())
 
 	if p.Status.CastlingRights.KingSide[Color_White] {
 		dataFen = fmt.Sprintf("%sK", dataFen)
