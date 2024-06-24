@@ -10,7 +10,6 @@ type Movement struct {
 	From Point
 	To   Point
 
-	// Next variables refer to the state before this movement have been done
 	PawnIsDoublePointMovement bool
 	PawnPromotionTo           *Kind
 
@@ -46,14 +45,6 @@ func NewMovement(movingPiece Piece, from, to Point /*, enPassant *Point, canWhit
 		IsTakingPiece: false,
 		From:          from,
 		To:            to,
-		// EnPassant:     enPassant,
-
-		// CanWhiteQueenSideCastling: canWhiteQueenSideCastling,
-		// CanWhiteKingSideCastling:  canWhiteKingSideCastling,
-		// CanBlackQueenSideCastling: canBlackQueenSideCastling,
-		// CanBlackKingSideCastling:  canBlackKingSideCastling,
-		// CanQueenSideCastling: canQueenSideCastling,
-		// CanKingSideCastling:  canKingSideCastling,
 	}
 }
 

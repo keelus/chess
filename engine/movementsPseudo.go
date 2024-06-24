@@ -1,9 +1,5 @@
 package engine
 
-func (g *Game) GetLegalMovements() []Movement {
-	return g.ComputedLegalMovements
-}
-
 func (p Position) GetPseudoMovements(color Color, doCastlingCheck bool) ([]Movement, [8][8]bool) {
 	movements := make([]Movement, 0, 256)
 	var attackMatrix [8][8]bool

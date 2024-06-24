@@ -87,6 +87,7 @@ func main() {
 			} else {
 				game.ForceSetPlayerToMove(engine.Color_White)
 			}
+			game.ComputeLegalMovements()
 		}
 
 		rl.BeginDrawing()
