@@ -17,7 +17,7 @@ const (
 )
 
 func (t Kind) ToRune() rune {
-	return []rune{'k', 'q', 'r', 'b', 'n', 'p'}[t]
+	return []rune{'_', 'k', 'q', 'r', 'b', 'n', 'p'}[t]
 }
 
 func KindFromRune(kind rune) Kind {

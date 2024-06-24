@@ -11,15 +11,14 @@ const (
 )
 
 func (c Color) ToRune() rune {
-	if c == Color_White {
-		return 'w'
-	}
-	return 'b'
+	return []rune{'_', 'w', 'b'}[c]
 }
 
 func ColorFromRune(color rune) Color {
 	if color == 'w' {
 		return Color_White
+	} else if color == 'b' {
+		return Color_Black
 	}
-	return Color_Black
+	return '_'
 }

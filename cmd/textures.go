@@ -22,11 +22,11 @@ func LoadTextures() {
 	loadedTextures = make(map[engine.Color]map[engine.Kind]rl.Texture2D)
 
 	for c := 0; c < engine.COLOR_AMOUNT; c++ {
-		castedColor := engine.Color(c)
+		castedColor := engine.Color(c + 1)
 		loadedTextures[castedColor] = make(map[engine.Kind]rl.Texture2D)
 
 		for k := 0; k < engine.KIND_AMOUNT; k++ {
-			castedKind := engine.Kind(k)
+			castedKind := engine.Kind(k + 1)
 
 			kindRune := castedKind.ToRune()
 			colorRune := castedColor.ToRune()
