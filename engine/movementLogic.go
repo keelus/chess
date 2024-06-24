@@ -20,8 +20,9 @@ func (g *Game) undoSimulatedMovement() {
 func (g *Game) forceMovement(movement Movement, recomputeLegalMovements bool) {
 	// Suppose is legal. TODO: Check if illegal with the computed list
 	newPosition := Position{
-		Board:  g.currentPosition.Board,
-		Status: g.currentPosition.Status.clone(),
+		Board:    g.currentPosition.Board,
+		Status:   g.currentPosition.Status.clone(),
+		Captures: g.currentPosition.Captures,
 	}
 
 	newPosition.Status.EnPassant = nil
@@ -106,6 +107,10 @@ func (g *Game) forceMovement(movement Movement, recomputeLegalMovements bool) {
 		if movement.isTakingPiece {
 			newPosition.Board[movement.takingPiece.Square.I][movement.takingPiece.Square.J].Kind = Kind_None
 			newPosition.Board[movement.takingPiece.Square.I][movement.takingPiece.Square.J].Color = Color_None
+
+			if recomputeLegalMovements {
+				newPosition.Captures = append(newPosition.Captures, movement.takingPiece)
+			}
 
 			if movement.takingPiece.Kind == Kind_Rook {
 				if newPosition.Status.CastlingRights.QueenSide[movement.takingPiece.Color] {

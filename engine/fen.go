@@ -10,13 +10,15 @@ type FenData struct {
 	PlacementData [8]string
 	ActiveColor   Color
 
-	HalfmoveClock  uint8
-	FulmoveCounter uint
-
 	WhiteCanKingSideCastling  bool
 	WhiteCanQueenSideCastling bool
 	BlackCanKingSideCastling  bool
 	BlackCanQueenSideCastling bool
+
+	EnPassant *Square
+
+	HalfmoveClock  uint8
+	FulmoveCounter uint
 }
 
 func parseFen(fen string) (FenData, error) {
@@ -56,7 +58,15 @@ func parseFen(fen string) (FenData, error) {
 		}
 	}
 
-	// TODO: En passant (parts[3])
+	var enPassant *Square = nil
+	if parts[3] != "-" {
+		square, err := NewSquareFromAlgebraic(parts[3])
+		if err != nil {
+			return FenData{}, errors.New("The provided FEN does not have a valid en passant. It must be in algebraic (e.g: d6).")
+		}
+
+		enPassant = &square
+	}
 
 	halfmoveClock, err := strconv.ParseUint(parts[4], 10, 0)
 	if err != nil {
@@ -71,6 +81,7 @@ func parseFen(fen string) (FenData, error) {
 	return FenData{
 		PlacementData:  [8]string(lacementParts),
 		ActiveColor:    ColorFromRune(activeColor),
+		EnPassant:      enPassant,
 		HalfmoveClock:  uint8(halfmoveClock),
 		FulmoveCounter: uint(fullmoveCounter),
 
@@ -79,4 +90,9 @@ func parseFen(fen string) (FenData, error) {
 		BlackCanKingSideCastling:  blackCanKingSideCastling,
 		BlackCanQueenSideCastling: blackCanQueenSideCastling,
 	}, nil
+}
+
+func IsFenValid(fen string) bool {
+	_, err := parseFen(fen)
+	return err == nil
 }

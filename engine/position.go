@@ -1,13 +1,14 @@
 package engine
 
 import (
-	"fmt"
+	"strconv"
+	"strings"
 )
 
 type Position struct {
-	Board Board
-
-	Status PositionStatus
+	Board    Board
+	Status   PositionStatus
+	Captures []Piece // Only used via API. Perft ignores this
 }
 
 type CastlingRights struct {
@@ -36,11 +37,15 @@ type PositionStatus struct {
 	FullmoveCounter uint
 }
 
-func (p *Position) GetHalfmoveClock() uint8 {
+func (p Position) GetHalfmoveClock() uint8 {
 	return p.Status.HalfmoveClock
 }
-func (p *Position) GetFullmoveCounter() uint {
+func (p Position) GetFullmoveCounter() uint {
 	return p.Status.FullmoveCounter
+}
+
+func (p Position) GetCaptures() []Piece {
+	return p.Captures
 }
 
 func (ps *PositionStatus) clone() PositionStatus {
@@ -75,39 +80,54 @@ func newPositionFromFen(fen string) Position {
 				},
 			},
 
-			EnPassant:       nil, //TODO
+			EnPassant:       parsedFen.EnPassant,
 			HalfmoveClock:   parsedFen.HalfmoveClock,
 			FullmoveCounter: parsedFen.FulmoveCounter,
 		},
+		Captures: make([]Piece, 0),
 	}
 }
 
 // TODO: Complete
 func (p Position) Fen() string {
-	boardFen := p.Board.Fen()
+	var sb strings.Builder
 
-	dataFen := fmt.Sprintf("%s %c ", boardFen, p.Status.PlayerToMove.ToRune())
+	sb.WriteRune(' ')
+	sb.WriteString(p.Board.Fen())
 
-	if p.Status.CastlingRights.KingSide[Color_White] {
-		dataFen = fmt.Sprintf("%sK", dataFen)
-	}
-	if p.Status.CastlingRights.QueenSide[Color_White] {
-		dataFen = fmt.Sprintf("%sQ", dataFen)
-	}
-	if p.Status.CastlingRights.KingSide[Color_Black] {
-		dataFen = fmt.Sprintf("%sk", dataFen)
-	}
-	if p.Status.CastlingRights.QueenSide[Color_Black] {
-		dataFen = fmt.Sprintf("%sq", dataFen)
+	sb.WriteRune(p.Status.PlayerToMove.ToRune())
+
+	if p.Status.CastlingRights.QueenSide[Color_White] && p.Status.CastlingRights.KingSide[Color_White] && p.Status.CastlingRights.QueenSide[Color_Black] && p.Status.CastlingRights.KingSide[Color_Black] {
+		sb.WriteRune(' ')
+
+		if p.Status.CastlingRights.KingSide[Color_White] {
+			sb.WriteRune('K')
+		}
+		if p.Status.CastlingRights.QueenSide[Color_White] {
+			sb.WriteRune('Q')
+		}
+		if p.Status.CastlingRights.KingSide[Color_Black] {
+			sb.WriteRune('k')
+		}
+		if p.Status.CastlingRights.QueenSide[Color_Black] {
+			sb.WriteRune('q')
+		}
+
+		sb.WriteRune(' ')
+	} else {
+		sb.WriteString(" - ")
 	}
 
 	if p.Status.EnPassant != nil {
-		dataFen = fmt.Sprintf("%s %s", dataFen, p.Status.EnPassant.ToAlgebraic())
+		sb.WriteString(p.Status.EnPassant.ToAlgebraic())
 	} else {
-		dataFen = fmt.Sprintf("%s -", dataFen)
+		sb.WriteRune('-')
 	}
 
-	dataFen = fmt.Sprintf("%s 0 1", dataFen)
+	sb.WriteRune(' ')
+	sb.WriteString(strconv.Itoa(int(p.Status.HalfmoveClock)))
+	sb.WriteRune(' ')
+	sb.WriteString(strconv.Itoa(int(p.Status.FullmoveCounter)))
 
-	return dataFen
+	return sb.String()
 }
