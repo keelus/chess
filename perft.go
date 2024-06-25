@@ -5,7 +5,7 @@ import (
 )
 
 // Used for testing via game_test.go
-func (g *Game) Perft(initialDepth, depth int, currentMove string, positionVerbose bool) int {
+func (g *Game) perft(initialDepth, depth int, currentMove string, positionVerbose bool) int {
 	var nMoves, i int
 	nodes := 0
 
@@ -16,13 +16,13 @@ func (g *Game) Perft(initialDepth, depth int, currentMove string, positionVerbos
 		return 1
 	}
 
-	g.ComputeLegalMovements()
+	g.computeLegalMovements()
 	moveList := g.computedLegalMovements
 	nMoves = len(moveList)
 
 	for i = 0; i < nMoves; i++ {
 		g.simulateMovement(moveList[i])
-		nodes += g.Perft(initialDepth, depth-1, moveList[i].Algebraic(), positionVerbose)
+		nodes += g.perft(initialDepth, depth-1, moveList[i].Algebraic(), positionVerbose)
 		g.undoSimulatedMovement()
 	}
 

@@ -1,10 +1,11 @@
 package chess
 
 import (
-	"fmt"
+	"errors"
 	"strings"
 )
 
+// Movement represents a piece movement to do in a chess position.
 type Movement struct {
 	movingPiece   Piece
 	takingPiece   Piece // Optional
@@ -13,8 +14,8 @@ type Movement struct {
 	fromSq Square
 	toSq   Square
 
-	pawnIsDoubleSquareMovement bool
-	pawnPromotionTo            *Kind
+	isDoublePawnPush bool
+	pawnPromotionTo  *Kind
 
 	isQueenSideCastling bool
 	isKingSideCastling  bool
@@ -31,8 +32,8 @@ func (m *Movement) withTakingPiece(piece Piece) *Movement {
 	return m
 }
 
-func (m *Movement) withPawn(isDoubleSquareMovement bool) *Movement {
-	m.pawnIsDoubleSquareMovement = isDoubleSquareMovement
+func (m *Movement) withPawn(isDoublePawnPush bool) *Movement {
+	m.isDoublePawnPush = isDoublePawnPush
 	return m
 }
 
@@ -51,10 +52,12 @@ func newMovement(movingPiece Piece, fromSquare, toSquare Square) *Movement {
 	}
 }
 
-func (m Movement) debug() string {
-	return fmt.Sprintf("Piece [color: %c, kind: %c] moves from (%d, %d) to (%d, %d) [takes: %t].", m.movingPiece.Color.ToRune(), m.movingPiece.Kind.ToRune(), m.fromSq.I, m.fromSq.J, m.toSq.I, m.toSq.J, m.isTakingPiece)
-}
-
+// Algebraic returns the Pure algebraic notation of the movement, as string.
+//
+// Examples outputs:
+//
+//	"d2d3"
+//	"f7f8q"
 func (m Movement) Algebraic() string {
 	from := m.fromSq
 	to := m.toSq
@@ -71,14 +74,65 @@ func (m Movement) Algebraic() string {
 	return sb.String()
 }
 
+// FromSquare returns the initial Square of the movement.
 func (m Movement) FromSquare() Square {
 	return m.fromSq
 }
 
+// ToSquare returns the final Square of the movement.
 func (m Movement) ToSquare() Square {
 	return m.toSq
 }
 
-func (m Movement) IsCapturing() bool {
+// MovingPiece returns a copy of the Piece that is making the movement.
+//
+// In case of castling, it would return the King. You can check for castling
+// using the movement.IsCastling() function.
+func (m Movement) MovingPiece() Piece {
+	return m.movingPiece
+}
+
+// IsTakingPiece reports whether this movement takes a piece or not.
+func (m Movement) IsTakingPiece() bool {
 	return m.isTakingPiece
+}
+
+// TakingPiece returns the taking/capturing piece in this movement.
+//
+// If the movement does not take a piece, it will return an empty Piece and the error.
+func (m Movement) TakingPiece() (Piece, error) {
+	if !m.isTakingPiece {
+		return Piece{}, errors.New("This movement is not taking any piece.")
+	}
+	return m.takingPiece, nil
+}
+
+// IsDoublePawnPush reports whether the movement is a pawn's double push or not.
+func (m Movement) IsDoublePawnPush() bool {
+	return m.isDoublePawnPush
+}
+
+// IsPawnPromotion reports whether the movement promotes a pawn or not.
+func (m Movement) IsPawnPromotion() bool {
+	return m.pawnPromotionTo != nil
+}
+
+// IsPawnPromotion returns the new Kind the pawn is being promoted to.
+//
+// If the movement is not a promotion, it will return Kind_None and the error.
+func (m Movement) PawnPromotion() (Kind, error) {
+	if m.pawnPromotionTo == nil {
+		return Kind_None, errors.New("This movement does not promote a pawn.")
+	}
+	return *m.pawnPromotionTo, nil
+}
+
+// IsQueenSideCastling reports whether the movement is a queenside castling or not.
+func (m Movement) IsQueenSideCastling() bool {
+	return m.isQueenSideCastling
+}
+
+// IsKingSideCastling reports whether the movement is a kingside castling or not.
+func (m Movement) IsKingSideCastling() bool {
+	return m.isKingSideCastling
 }

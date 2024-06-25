@@ -1,10 +1,13 @@
 package chess
 
 import (
+	"errors"
 	"strconv"
 	"strings"
 )
 
+// Position represents a specific position of a chess game, including piece
+// placement in board, active en passant, player turn, move counter, etc.
 type Position struct {
 	board Board
 
@@ -14,10 +17,10 @@ type Position struct {
 	halfmoveClock   uint8
 	fullmoveCounter uint
 
-	captures []Piece // Only used via API. Perft ignores this
+	captures []Piece // Only used via API. Perft ignores this.
 }
 
-// Note: enPassantSq is not cloned, as it's not needed
+// Note: enPassantSq is not cloned, as it's not needed.
 func (p *Position) clone() Position {
 	return Position{
 		board: p.board,
@@ -32,6 +35,8 @@ func (p *Position) clone() Position {
 	}
 }
 
+// CastlingRights represents the position's current castling rights,
+// of both players.
 type CastlingRights struct {
 	queenSide map[Color]bool
 	kingSide  map[Color]bool
@@ -50,68 +55,69 @@ func (cr *CastlingRights) clone() CastlingRights {
 	}
 }
 
-func (cr CastlingRights) QueenSide(color Color) bool {
-	return cr.queenSide[color]
-}
-
-func (cr CastlingRights) KingSide(color Color) bool {
-	return cr.kingSide[color]
-}
-
-func (p Position) HalfmoveClock() uint8 {
-	return p.halfmoveClock
-}
-func (p Position) FullmoveCounter() uint {
-	return p.fullmoveCounter
-}
-
-func (p Position) Captures() []Piece {
-	return p.captures
-}
-
+// CastlingRights returns the position's current castling rights,
+// of both players.
 func (p Position) CastlingRights() CastlingRights {
 	return p.castlingRights
 }
 
-func (p Position) EnPassantSquare() *Square {
-	return p.enPassantSq
+// QueenSide returns whether the passed color (player/side) has
+// castling rights on queenside or not.
+func (cr CastlingRights) QueenSide(color Color) bool {
+	return cr.queenSide[color]
 }
 
+// KingSide returns whether the passed color (player/side) has
+// castling rights on kingside or not.
+func (cr CastlingRights) KingSide(color Color) bool {
+	return cr.kingSide[color]
+}
+
+// HalfmoveClock returns the position's halfmove clock.
+func (p Position) HalfmoveClock() uint8 {
+	return p.halfmoveClock
+}
+
+// FullmoveCounter returns the position's fullmove counter.
+func (p Position) FullmoveCounter() uint {
+	return p.fullmoveCounter
+}
+
+// Captures returns a slice containing all the Pieces captured
+// until the position, in order.
+func (p Position) Captures() []Piece {
+	return p.captures
+}
+
+// HasActiveEnPassant reports whether this possition has an active
+// en passsant oportunity.
+func (p Position) HasActiveEnPassant() bool {
+	return p.enPassantSq != nil
+}
+
+// EnPassantSquare returns the current en passant square.
+//
+// If there is no en passant in the current position, it will
+// return an empty Square and the error.
+func (p Position) EnPassantSquare() (Square, error) {
+	if p.enPassantSq == nil {
+		return Square{}, errors.New("There is no en passant in the current position.")
+	}
+	return *p.enPassantSq, nil
+}
+
+// Turn returns the position's player/side to move.
 func (p Position) Turn() Color {
 	return p.playerToMove
 }
 
-func newPositionFromFen(fen string) Position {
-	parsedFen, err := parseFen(fen)
-	if err != nil {
-		panic(err)
-	}
-
-	return Position{
-		board: newBoardFromFen(parsedFen.PlacementData),
-
-		playerToMove: parsedFen.ActiveColor,
-
-		castlingRights: CastlingRights{
-			queenSide: map[Color]bool{
-				Color_White: parsedFen.WhiteCanQueenSideCastling,
-				Color_Black: parsedFen.BlackCanQueenSideCastling,
-			},
-			kingSide: map[Color]bool{
-				Color_White: parsedFen.WhiteCanKingSideCastling,
-				Color_Black: parsedFen.BlackCanKingSideCastling,
-			},
-		},
-
-		enPassantSq:     parsedFen.EnPassant,
-		halfmoveClock:   parsedFen.HalfmoveClock,
-		fullmoveCounter: parsedFen.FulmoveCounter,
-
-		captures: make([]Piece, 0),
-	}
-}
-
-// TODO: Complete
+// Fen returns the position's Forsyth–Edwards Notation, as an string, containing
+// the board piece placement, player to move, castling rights, en passant, halfmove clock
+// and fullmove counter.
+//
+// For example, for a starting chess position:
+//
+//	"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 func (p Position) Fen() string {
 	var sb strings.Builder
 
@@ -153,6 +159,36 @@ func (p Position) Fen() string {
 	sb.WriteString(strconv.Itoa(int(p.fullmoveCounter)))
 
 	return sb.String()
+}
+
+func newPositionFromFen(fen string) (Position, error) {
+	parsedFen, err := parseFen(fen)
+	if err != nil {
+		return Position{}, err
+	}
+
+	return Position{
+		board: newBoardFromFen(parsedFen.placementData),
+
+		playerToMove: parsedFen.activeColor,
+
+		castlingRights: CastlingRights{
+			queenSide: map[Color]bool{
+				Color_White: parsedFen.whiteCanQueenSideCastling,
+				Color_Black: parsedFen.blackCanQueenSideCastling,
+			},
+			kingSide: map[Color]bool{
+				Color_White: parsedFen.whiteCanKingSideCastling,
+				Color_Black: parsedFen.blackCanKingSideCastling,
+			},
+		},
+
+		enPassantSq:     parsedFen.enPassantSq,
+		halfmoveClock:   parsedFen.halfmoveClock,
+		fullmoveCounter: parsedFen.fulmoveCounter,
+
+		captures: make([]Piece, 0),
+	}, nil
 }
 
 func (p Position) computePseudoMovements(color Color, doCastlingCheck bool) ([]Movement, [8][8]bool) {
@@ -450,6 +486,6 @@ func (p Position) checkForCheck(allyColor Color, opponentAttackMatrix *[8][8]boo
 		}
 	}
 
-	// Won't get here
+	// Won't get here, unless there is no King piece ??
 	return false
 }

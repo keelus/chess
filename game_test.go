@@ -120,14 +120,14 @@ func TestPerft(t *testing.T) {
 					t.Parallel()
 				}
 
-				game := NewGame(perftTest.fen)
+				game, _ := NewGame(perftTest.fen)
 
 				for depth := 1; depth <= perftTest.maxDepth; depth++ {
 					if positionVerbose {
 						fmt.Printf("Evaluation depth: %d\n", depth)
 					}
 
-					result := game.Perft(depth, depth, "", positionVerbose)
+					result := game.perft(depth, depth, "", positionVerbose)
 					totalNodes += result
 
 					if val, ok := perftTest.depthMap[depth]; ok && val != result {

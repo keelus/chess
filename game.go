@@ -5,39 +5,58 @@ import (
 	"fmt"
 )
 
+// Game represents a Chess Game.
 type Game struct {
 	positions       []Position
 	currentPosition Position
 
-	//HasEnded bool
-
 	computedLegalMovements []Movement
 
-	outcome Outcome
+	outcome Outcome // Not used by Perft.
 
-	positionMap     map[string]int // only used by api, not perft (as a map of fen positions is too slow to compute)
-	movementHistory []Movement     //only used by api, not perft
+	positionMap     map[string]int // Not used by Perft (ignores Threefold).
+	movementHistory []Movement     // Not used by Perft.
 }
 
-func NewGame(fen string) Game {
+// NewGame creates and returns an new Game instance, based on the provided FEN string.
+//
+// If the provided FEN is invalid, NewGame will return an empty Game, along with it's error.
+//
+// If the provided FEN is empty (""), NewGame will initialize the Game instance with
+// the standard starting position in Chess.
+func NewGame(fen string) (Game, error) {
 	if fen == "" {
 		fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 	}
 
+	startingPosition, err := newPositionFromFen(fen)
+	if err != nil {
+		return Game{}, err
+	}
+
 	newGame := Game{
 		positions:       make([]Position, 0),
-		currentPosition: newPositionFromFen(fen),
+		currentPosition: startingPosition,
 
 		positionMap: make(map[string]int),
 
 		outcome: Outcome_None,
-		//HasEnded: false,
 	}
 
-	newGame.ComputeLegalMovements()
-	return newGame
+	newGame.computeLegalMovements()
+
+	return newGame, nil
 }
 
+// PieceAtSquareAlgebraic returns a copy of the Piece placed in the
+// Game's current position, at the given algebraic square.
+//
+// If the algebraic position is invalid, it will return an empty Piece and it's error.
+//
+// Examples:
+//
+//	PieceAtSquareAlgebraic("d2") // returns Piece{...}, nil
+//	PieceAtSquareAlgebraic("aa") // returns Piece{}, error
 func (g *Game) PieceAtSquareAlgebraic(algebraic string) (Piece, error) {
 	square, err := NewSquareFromAlgebraic(algebraic)
 	if err != nil {
@@ -47,18 +66,42 @@ func (g *Game) PieceAtSquareAlgebraic(algebraic string) (Piece, error) {
 	return g.PieceAtSquare(square), nil
 }
 
+// PieceAtSquare returns a copy of the Piece placed in the
+// Game's current position, at the given square.
+//
+// Note: It assumes that the square is correct. If you create a Square
+// instance without the NewSquare, make sure it's valid.
 func (g *Game) PieceAtSquare(square Square) Piece {
 	return g.currentPosition.board[square.I][square.J]
 }
 
+// Turn returns the player/side to move's color of the current
+// game position.
 func (g Game) Turn() Color {
 	return g.currentPosition.playerToMove
 }
 
+// LegalMovements returns a slice of legal movements of the
+// current position's turn.
+//
+// If no movements are legal, it will return an empty list.
+// Example:
+//
+//	LegalMovements() // returns [Movement{...], Movement{...}, ...]
+//	LegalMovements() // returns []
 func (g *Game) LegalMovements() []Movement {
 	return g.computedLegalMovements
 }
 
+// LegalMovements returns a slice of legal movements of the
+// current position's turn, in Pure algebraic notation strings.
+//
+// If no movements are legal, it will return an empty list.
+//
+// Example:
+//
+//	LegalMovementsAlgebraic() // returns ["d2d3, "f7f8q", ...]
+//	LegalMovementsAlgebraic() // returns []
 func (g Game) LegalMovementsAlgebraic() []string {
 	movementList := make([]string, len(g.computedLegalMovements))
 	for i, legalMovement := range g.computedLegalMovements {
@@ -67,6 +110,18 @@ func (g Game) LegalMovementsAlgebraic() []string {
 	return movementList
 }
 
+// LegalMovementsOfPiece returns a slice of legal movements of the
+// current position's turn that have the passed square as origin.
+//
+// If no movements are legal, it will return an empty list.
+//
+// Note: It assumes that the square is correct. If you create a Square
+// instance without the NewSquare, make sure it's valid.
+//
+// Example:
+//
+//	LegalMovements() // returns [Movement{...], Movement{...}, ...]
+//	LegalMovementsOfPiece() // returns []
 func (g Game) LegalMovementsOfPiece(square Square) []Movement {
 	legalMovementsOfPiece := make([]Movement, 0)
 	for _, legalMovement := range g.computedLegalMovements {
@@ -78,6 +133,19 @@ func (g Game) LegalMovementsOfPiece(square Square) []Movement {
 	return legalMovementsOfPiece
 }
 
+// LegalMovementsOfPieceAlgebraic returns a slice of legal movements in Pure
+// algebraic notation strings, of the current position's turn that
+// have the passed square as origin.
+//
+// If no movements are legal, it will return an empty list.
+//
+// Note: It assumes that the square is correct. If you create a Square
+// instance without the NewSquare, make sure it's valid.
+//
+// Example:
+//
+//	LegalMovementsOfPieceAlgebraic() // returns ["d2d3, "f7f8q", ...]
+//	LegalMovementsOfPieceAlgebraic() // returns []
 func (g Game) LegalMovementsOfPieceAlgebraic(square Square) []string {
 	legalMovementsOfPiece := make([]string, 0)
 	for _, legalMovement := range g.computedLegalMovements {
@@ -89,10 +157,14 @@ func (g Game) LegalMovementsOfPieceAlgebraic(square Square) []string {
 	return legalMovementsOfPiece
 }
 
+// IsMovementLegal returns whether the passed movement is legal in
+// the current position or not.
 func (g *Game) IsMovementLegal(movement Movement) bool {
 	return g.IsMovementLegalAlgebraic(movement.Algebraic())
 }
 
+// IsMovementLegalAlgebraic returns whether the passed movement in Pure algebraic
+// notation is legal in the current position or not.
 func (g *Game) IsMovementLegalAlgebraic(algebraicMovement string) bool {
 	for _, legalMovement := range g.computedLegalMovements {
 		if legalMovement.Algebraic() == algebraicMovement {
@@ -103,10 +175,17 @@ func (g *Game) IsMovementLegalAlgebraic(algebraicMovement string) bool {
 	return false
 }
 
+// MakeMovement tries to make the given movement.
+//
+// If the movement is invalid, it will return an error.
 func (g *Game) MakeMovement(movement Movement) error {
 	return g.MakeMovementAlgebraic(movement.Algebraic())
 }
 
+// MakeMovementAlgebraic tries to make the given movement in Pure
+// algebraic notation.
+//
+// If the movement is invalid, it will return an error.
 func (g *Game) MakeMovementAlgebraic(algebraicMovement string) error {
 	for _, legalMovement := range g.computedLegalMovements {
 		if legalMovement.Algebraic() == algebraicMovement {
@@ -119,19 +198,32 @@ func (g *Game) MakeMovementAlgebraic(algebraicMovement string) error {
 	return errors.New("That movement is not allowed.")
 }
 
+// StartingFen returns the Forsyth–Edwards Notation of the game's
+// starting position.
+//
+// A shortcut for g.PositionAtIndex(0).Fen()
 func (g *Game) StartingFen() string {
 	pos, _ := g.PositionAtIndex(0)
 	return pos.Fen()
 }
 
+// CurrentFen returns the Forsyth–Edwards Notation of the game's
+// current position.
+//
+// A shortcut for g.CurrentPosition().Fen()
 func (g *Game) CurrentFen() string {
 	return g.CurrentPosition().Fen()
 }
 
+// CurrentPosition returns a copy of the game's current position.
 func (g *Game) CurrentPosition() Position {
 	return g.currentPosition
 }
 
+// PositionAtIndex returns a copy of the game's position at the
+// given index.
+//
+// If the index is invalid, it will return an empty Position and an error.
 func (g *Game) PositionAtIndex(index int) (Position, error) {
 	if index >= 0 && index < len(g.positions) {
 		return g.positions[index], nil
@@ -140,10 +232,16 @@ func (g *Game) PositionAtIndex(index int) (Position, error) {
 	return Position{}, errors.New("That index is invalid or out of bounds.")
 }
 
+// MovementHistory returns a slice of Movements made in the game,
+// beginning with the first move and ending with the most recent one.
 func (g *Game) MovementHistory() []Movement {
 	return g.movementHistory
 }
 
+// Outcome represent's the game's outcome. That is, the reason
+// of an ended game.
+//
+// For a non-ended game, Outcome will be Outcome_None.
 type Outcome string
 
 const (
@@ -157,11 +255,20 @@ const (
 	Outcome_Draw_3Rep   = "Threefold repetition"
 )
 
+// Outcome returns's the game's outcome.
+//
+// For a non-ended game, Outcome will be Outcome_None
 func (g *Game) Outcome() Outcome {
 	return g.outcome
 }
 
-func (g *Game) FilterPseudoMovements(movements *[]Movement) []Movement {
+// Terminate forces a Game to end, forcing the Outcome to
+// the passed argument.
+func (g *Game) Terminate(outcome Outcome) {
+	g.outcome = outcome
+}
+
+func (g *Game) filterPseudoMovements(movements *[]Movement) []Movement {
 	//beginningColor := b.playerToMove
 	filteredMovements := []Movement{}
 
@@ -186,9 +293,9 @@ func (g *Game) FilterPseudoMovements(movements *[]Movement) []Movement {
 	return filteredMovements
 }
 
-func (g *Game) ComputeLegalMovements() {
+func (g *Game) computeLegalMovements() {
 	pseudoMovements, _ := g.currentPosition.computePseudoMovements(g.currentPosition.playerToMove, true)
-	legalMovements := g.FilterPseudoMovements(&pseudoMovements)
+	legalMovements := g.filterPseudoMovements(&pseudoMovements)
 	g.computedLegalMovements = legalMovements
 }
 
@@ -250,7 +357,7 @@ func (g *Game) forceMovement(movement Movement, recomputeLegalMovements bool) {
 		}
 	} else {
 		if movement.movingPiece.Kind == Kind_Pawn {
-			if movement.pawnIsDoubleSquareMovement {
+			if movement.isDoublePawnPush {
 				invertSum := -1
 				if movement.movingPiece.Color == Color_Black {
 					invertSum = +1
@@ -362,7 +469,7 @@ func (g *Game) forceMovement(movement Movement, recomputeLegalMovements bool) {
 	// 		- After making a move (via game.MakeMove())
 	// 		- Manually via computeLegalMovements(), called by Perft
 	if recomputeLegalMovements {
-		g.ComputeLegalMovements()
+		g.computeLegalMovements()
 
 		if len(g.computedLegalMovements) == 0 {
 			_, opponentAttackMatrix := g.currentPosition.computePseudoMovements(g.currentPosition.playerToMove.Opposite(), false)
@@ -381,10 +488,6 @@ func (g *Game) forceMovement(movement Movement, recomputeLegalMovements bool) {
 			g.Terminate(Outcome_Draw_50Move)
 		}
 	}
-}
-
-func (g *Game) Terminate(outcome Outcome) {
-	g.outcome = outcome
 }
 
 func (g *Game) undoSimulatedMovement() {

@@ -1,5 +1,9 @@
 package chess
 
+// Piece represents a chess Piece. It can be initialized or not.
+//
+// If not initialized, both Color and Kind will be of type
+// none (Color_None, Kind_None)
 type Piece struct {
 	Color Color
 	Kind  Kind

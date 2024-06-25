@@ -6,35 +6,42 @@ import (
 	"strings"
 )
 
-type FenData struct {
-	PlacementData [8]string
-	ActiveColor   Color
+type fenData struct {
+	placementData [8]string
+	activeColor   Color
 
-	WhiteCanKingSideCastling  bool
-	WhiteCanQueenSideCastling bool
-	BlackCanKingSideCastling  bool
-	BlackCanQueenSideCastling bool
+	whiteCanKingSideCastling  bool
+	whiteCanQueenSideCastling bool
+	blackCanKingSideCastling  bool
+	blackCanQueenSideCastling bool
 
-	EnPassant *Square
+	enPassantSq *Square
 
-	HalfmoveClock  uint8
-	FulmoveCounter uint
+	halfmoveClock  uint8
+	fulmoveCounter uint
 }
 
-func parseFen(fen string) (FenData, error) {
+// IsFenValid returns whether the passed FEN string
+// is valid or not.
+func IsFenValid(fen string) bool {
+	_, err := parseFen(fen)
+	return err == nil
+}
+
+func parseFen(fen string) (fenData, error) {
 	parts := strings.Split(fen, " ")
 	if len(parts) != 6 {
-		return FenData{}, errors.New("The provided FEN does not have 6 parts.")
+		return fenData{}, errors.New("The provided FEN does not have 6 parts.")
 	}
 
 	lacementParts := strings.Split(parts[0], "/")
 	if len(lacementParts) != 8 {
-		return FenData{}, errors.New("The provided FEN does not have 8 placement positions in part 1.")
+		return fenData{}, errors.New("The provided FEN does not have 8 placement positions in part 1.")
 	}
 
 	activeColor := rune(parts[1][0])
 	if activeColor != 'w' && activeColor != 'b' {
-		return FenData{}, errors.New("The provided FEN does not have a valid active color.")
+		return fenData{}, errors.New("The provided FEN does not have a valid active color.")
 	}
 
 	whiteCanKingSideCastling := false
@@ -62,7 +69,7 @@ func parseFen(fen string) (FenData, error) {
 	if parts[3] != "-" {
 		square, err := NewSquareFromAlgebraic(parts[3])
 		if err != nil {
-			return FenData{}, errors.New("The provided FEN does not have a valid en passant. It must be in algebraic (e.g: d6).")
+			return fenData{}, errors.New("The provided FEN does not have a valid en passant. It must be in algebraic (e.g: d6).")
 		}
 
 		enPassant = &square
@@ -70,29 +77,24 @@ func parseFen(fen string) (FenData, error) {
 
 	halfmoveClock, err := strconv.ParseUint(parts[4], 10, 0)
 	if err != nil {
-		return FenData{}, errors.New("The provided FEN does not have a valid halfmove number.")
+		return fenData{}, errors.New("The provided FEN does not have a valid halfmove number.")
 	}
 
 	fullmoveCounter, err := strconv.ParseUint(parts[5], 10, 0)
 	if err != nil || fullmoveCounter < 1 {
-		return FenData{}, errors.New("The provided FEN does not have a valid fullmove number.")
+		return fenData{}, errors.New("The provided FEN does not have a valid fullmove number.")
 	}
 
-	return FenData{
-		PlacementData:  [8]string(lacementParts),
-		ActiveColor:    ColorFromRune(activeColor),
-		EnPassant:      enPassant,
-		HalfmoveClock:  uint8(halfmoveClock),
-		FulmoveCounter: uint(fullmoveCounter),
+	return fenData{
+		placementData:  [8]string(lacementParts),
+		activeColor:    ColorFromRune(activeColor),
+		enPassantSq:    enPassant,
+		halfmoveClock:  uint8(halfmoveClock),
+		fulmoveCounter: uint(fullmoveCounter),
 
-		WhiteCanKingSideCastling:  whiteCanKingSideCastling,
-		WhiteCanQueenSideCastling: whiteCanQueenSideCastling,
-		BlackCanKingSideCastling:  blackCanKingSideCastling,
-		BlackCanQueenSideCastling: blackCanQueenSideCastling,
+		whiteCanKingSideCastling:  whiteCanKingSideCastling,
+		whiteCanQueenSideCastling: whiteCanQueenSideCastling,
+		blackCanKingSideCastling:  blackCanKingSideCastling,
+		blackCanQueenSideCastling: blackCanQueenSideCastling,
 	}, nil
-}
-
-func IsFenValid(fen string) bool {
-	_, err := parseFen(fen)
-	return err == nil
 }

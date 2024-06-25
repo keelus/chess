@@ -6,8 +6,24 @@ import (
 	"unicode"
 )
 
+// Board represents a 8x8 matrix, that consists of rows
+// of Pieces.
+//
+// Note: If you intend in creating a new Board, use NewBoard()
+// function, or else the created board's piece's position will
+// be (0, 0) by default.
 type Board [8][8]Piece
 
+// Fen returns a string of the board's piece placement
+// in Forsyth–Edwards Notation.
+//
+// For example, for a starting chess game would return:
+// rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR
+//
+// Note: This Fen() function returns solely the FEN information
+// related to the board's piece placement. You should use
+// the Position type's Fen() function if you intend to
+// get the turn, halfmove clock, etc.
 func (b *Board) Fen() string {
 	var sb strings.Builder
 	spaceAccum := 0
