@@ -1,4 +1,4 @@
-package engine
+package chess
 
 import (
 	"errors"
@@ -38,25 +38,28 @@ func NewGame(fen string) Game {
 	return newGame
 }
 
-func (g *Game) GetPieceAt(square Square) Piece {
-	return g.currentPosition.Board[square.I][square.J]
-}
-
-func (g *Game) GetPieceAtAlgebraic(algebraic string) (Piece, error) {
+func (g *Game) PieceAtSquareAlgebraic(algebraic string) (Piece, error) {
 	square, err := NewSquareFromAlgebraic(algebraic)
 	if err != nil {
 		return Piece{}, err
 	}
 
-	return g.GetPieceAt(square), nil
+	return g.PieceAtSquare(square), nil
+}
+
+func (g *Game) PieceAtSquare(square Square) Piece {
+	return g.currentPosition.board[square.I][square.J]
 }
 
 func (g Game) Turn() Color {
-	return g.currentPosition.Status.PlayerToMove
+	return g.currentPosition.playerToMove
 }
 
-// public func
-func (g *Game) GetLegalMovements() []string {
+func (g *Game) LegalMovements() []Movement {
+	return g.computedLegalMovements
+}
+
+func (g Game) LegalMovementsAlgebraic() []string {
 	movementList := make([]string, len(g.computedLegalMovements))
 	for i, legalMovement := range g.computedLegalMovements {
 		movementList[i] = legalMovement.Algebraic()
@@ -64,66 +67,72 @@ func (g *Game) GetLegalMovements() []string {
 	return movementList
 }
 
-func (g *Game) GetLegalMovementsOfPiece(square Square) []string {
-	movementList := make([]string, 0)
+func (g Game) LegalMovementsOfPiece(square Square) []Movement {
+	legalMovementsOfPiece := make([]Movement, 0)
 	for _, legalMovement := range g.computedLegalMovements {
-		if legalMovement.from.I == square.I && legalMovement.from.J == square.J {
-			movementList = append(movementList, legalMovement.Algebraic())
+		if legalMovement.fromSq.IsEqualTo(square) {
+			legalMovementsOfPiece = append(legalMovementsOfPiece, legalMovement)
 		}
 	}
-	return movementList
+
+	return legalMovementsOfPiece
 }
 
-func (g *Game) getLegalMovementsMap() map[string]Movement {
-	movementMap := make(map[string]Movement)
+func (g Game) LegalMovementsOfPieceAlgebraic(square Square) []string {
+	legalMovementsOfPiece := make([]string, 0)
 	for _, legalMovement := range g.computedLegalMovements {
-		movementMap[legalMovement.Algebraic()] = legalMovement
+		if legalMovement.fromSq.IsEqualTo(square) {
+			legalMovementsOfPiece = append(legalMovementsOfPiece, legalMovement.Algebraic())
+		}
 	}
-	return movementMap
+
+	return legalMovementsOfPiece
 }
 
-func (g *Game) IsMovementLegal(movement string) bool {
-	legalMovementsMap := g.getLegalMovementsMap()
-	_, ok := legalMovementsMap[movement]
-	return ok
+func (g *Game) IsMovementLegal(movement Movement) bool {
+	return g.IsMovementLegalAlgebraic(movement.Algebraic())
 }
 
-// public func
-func (g *Game) MakeMovement(movement string) error {
-	legalMovementsMap := g.getLegalMovementsMap()
-	if movementValue, ok := legalMovementsMap[movement]; ok {
-		g.movementHistory = append(g.movementHistory, movementValue)
-		g.forceMovement(movementValue, true)
-		return nil
+func (g *Game) IsMovementLegalAlgebraic(algebraicMovement string) bool {
+	for _, legalMovement := range g.computedLegalMovements {
+		if legalMovement.Algebraic() == algebraicMovement {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (g *Game) MakeMovement(movement Movement) error {
+	return g.MakeMovementAlgebraic(movement.Algebraic())
+}
+
+func (g *Game) MakeMovementAlgebraic(algebraicMovement string) error {
+	for _, legalMovement := range g.computedLegalMovements {
+		if legalMovement.Algebraic() == algebraicMovement {
+			g.movementHistory = append(g.movementHistory, legalMovement)
+			g.forceMovement(legalMovement, true)
+			return nil
+		}
 	}
 
 	return errors.New("That movement is not allowed.")
 }
 
-// TODO: Public field / getters
-func (g *Game) MovementInformation(movement string) (Movement, error) {
-	legalMovementsMap := g.getLegalMovementsMap()
-	if movementValue, ok := legalMovementsMap[movement]; ok {
-		return movementValue, nil
-	}
-
-	return Movement{}, errors.New("That movement is not allowed or is invalid.")
-}
-
-func (g *Game) PrintStartingFen() string {
-	pos, _ := g.GetPositionAtIndex(0)
+func (g *Game) StartingFen() string {
+	pos, _ := g.PositionAtIndex(0)
 	return pos.Fen()
 }
 
-func (g *Game) PrintCurrentFen() string {
-	return g.GetCurrentPosition().Fen()
+func (g *Game) CurrentFen() string {
+	return g.CurrentPosition().Fen()
 }
 
-func (g *Game) GetCurrentPosition() Position {
+func (g *Game) CurrentPosition() Position {
 	return g.currentPosition
 }
 
-func (g *Game) GetPositionAtIndex(index int) (Position, error) {
+func (g *Game) PositionAtIndex(index int) (Position, error) {
 	if index >= 0 && index < len(g.positions) {
 		return g.positions[index], nil
 	}
@@ -153,17 +162,17 @@ func (g *Game) Outcome() Outcome {
 }
 
 func (g *Game) FilterPseudoMovements(movements *[]Movement) []Movement {
-	//beginningColor := b.PlayerToMove
+	//beginningColor := b.playerToMove
 	filteredMovements := []Movement{}
 
 	// Ensure we use this colors (and not others, as CurrentPosition will change on GetPseudoMovements)
-	allyColor := g.currentPosition.Status.PlayerToMove
-	opponentColor := g.currentPosition.Status.PlayerToMove.Opposite()
+	allyColor := g.currentPosition.playerToMove
+	opponentColor := g.currentPosition.playerToMove.Opposite()
 
 	for _, myMovement := range *movements {
 		// TODO: DO a simulateMovement
 		g.simulateMovement(myMovement)
-		_, opponentAttackMatrix := g.currentPosition.GetPseudoMovements(opponentColor, false)
+		_, opponentAttackMatrix := g.currentPosition.computePseudoMovements(opponentColor, false)
 
 		weGetChecked := g.currentPosition.checkForCheck(allyColor, &opponentAttackMatrix)
 
@@ -178,7 +187,7 @@ func (g *Game) FilterPseudoMovements(movements *[]Movement) []Movement {
 }
 
 func (g *Game) ComputeLegalMovements() {
-	pseudoMovements, _ := g.currentPosition.GetPseudoMovements(g.currentPosition.Status.PlayerToMove, true)
+	pseudoMovements, _ := g.currentPosition.computePseudoMovements(g.currentPosition.playerToMove, true)
 	legalMovements := g.FilterPseudoMovements(&pseudoMovements)
 	g.computedLegalMovements = legalMovements
 }
@@ -188,23 +197,12 @@ func (g *Game) simulateMovement(movement Movement) {
 	g.forceMovement(movement, false)
 }
 
-func (g *Game) undoSimulatedMovement() {
-	g.undoMovement()
-}
-
 func (g *Game) forceMovement(movement Movement, recomputeLegalMovements bool) {
-	// Suppose is legal. TODO: Check if illegal with the computed list
-	newPosition := Position{
-		Board:    g.currentPosition.Board,
-		Status:   g.currentPosition.Status.clone(),
-		Captures: g.currentPosition.Captures,
-	}
-
-	newPosition.Status.EnPassant = nil
+	newPosition := g.currentPosition.clone()
 
 	if movement.isQueenSideCastling || movement.isKingSideCastling {
-		newPosition.Status.CastlingRights.QueenSide[movement.movingPiece.Color] = false
-		newPosition.Status.CastlingRights.KingSide[movement.movingPiece.Color] = false
+		newPosition.castlingRights.queenSide[movement.movingPiece.Color] = false
+		newPosition.castlingRights.kingSide[movement.movingPiece.Color] = false
 
 		castlingRow := 7
 		if movement.movingPiece.Color == Color_Black {
@@ -212,43 +210,43 @@ func (g *Game) forceMovement(movement Movement, recomputeLegalMovements bool) {
 		}
 
 		if movement.isQueenSideCastling {
-			rookPiece := newPosition.Board[castlingRow][0]
-			kingPiece := newPosition.Board[castlingRow][4]
+			rookPiece := newPosition.board[castlingRow][0]
+			kingPiece := newPosition.board[castlingRow][4]
 
 			// Set new rook
-			newPosition.Board[castlingRow][3].Kind = rookPiece.Kind
-			newPosition.Board[castlingRow][3].Color = rookPiece.Color
+			newPosition.board[castlingRow][3].Kind = rookPiece.Kind
+			newPosition.board[castlingRow][3].Color = rookPiece.Color
 
 			// Delete old rook
-			newPosition.Board[castlingRow][0].Kind = Kind_None
-			newPosition.Board[castlingRow][0].Color = Color_None
+			newPosition.board[castlingRow][0].Kind = Kind_None
+			newPosition.board[castlingRow][0].Color = Color_None
 
 			// Set new king
-			newPosition.Board[castlingRow][2].Kind = kingPiece.Kind
-			newPosition.Board[castlingRow][2].Color = kingPiece.Color
+			newPosition.board[castlingRow][2].Kind = kingPiece.Kind
+			newPosition.board[castlingRow][2].Color = kingPiece.Color
 
 			// Delete old king
-			newPosition.Board[castlingRow][4].Kind = Kind_None
-			newPosition.Board[castlingRow][4].Color = Color_None
+			newPosition.board[castlingRow][4].Kind = Kind_None
+			newPosition.board[castlingRow][4].Color = Color_None
 		} else if movement.isKingSideCastling {
-			rookPiece := newPosition.Board[castlingRow][7]
-			kingPiece := newPosition.Board[castlingRow][4]
+			rookPiece := newPosition.board[castlingRow][7]
+			kingPiece := newPosition.board[castlingRow][4]
 
 			// Set new rook
-			newPosition.Board[castlingRow][5].Kind = rookPiece.Kind
-			newPosition.Board[castlingRow][5].Color = rookPiece.Color
+			newPosition.board[castlingRow][5].Kind = rookPiece.Kind
+			newPosition.board[castlingRow][5].Color = rookPiece.Color
 
 			// Delete old rook
-			newPosition.Board[castlingRow][7].Kind = Kind_None
-			newPosition.Board[castlingRow][7].Color = Color_None
+			newPosition.board[castlingRow][7].Kind = Kind_None
+			newPosition.board[castlingRow][7].Color = Color_None
 
 			// Set new king
-			newPosition.Board[castlingRow][6].Kind = kingPiece.Kind
-			newPosition.Board[castlingRow][6].Color = kingPiece.Color
+			newPosition.board[castlingRow][6].Kind = kingPiece.Kind
+			newPosition.board[castlingRow][6].Color = kingPiece.Color
 
 			// Delete old king
-			newPosition.Board[castlingRow][4].Kind = Kind_None
-			newPosition.Board[castlingRow][4].Color = Color_None
+			newPosition.board[castlingRow][4].Kind = Kind_None
+			newPosition.board[castlingRow][4].Color = Color_None
 		}
 	} else {
 		if movement.movingPiece.Kind == Kind_Pawn {
@@ -259,85 +257,85 @@ func (g *Game) forceMovement(movement Movement, recomputeLegalMovements bool) {
 				}
 
 				// Uint8 from that sum/rest, as it will never be negative in a starting double pawn
-				newEnPassantSquare := newSquare(uint8(int(movement.from.I)+invertSum), movement.from.J)
-				newPosition.Status.EnPassant = &newEnPassantSquare
+				newEnPassantSquare := newSquare(uint8(int(movement.fromSq.I)+invertSum), movement.fromSq.J)
+				newPosition.enPassantSq = &newEnPassantSquare
 			}
 		} else if movement.movingPiece.Kind == Kind_King {
-			newPosition.Status.CastlingRights.QueenSide[movement.movingPiece.Color] = false
-			newPosition.Status.CastlingRights.KingSide[movement.movingPiece.Color] = false
+			newPosition.castlingRights.queenSide[movement.movingPiece.Color] = false
+			newPosition.castlingRights.kingSide[movement.movingPiece.Color] = false
 		} else if movement.movingPiece.Kind == Kind_Rook {
 			// Check if currently moving rook is from queen or king side
-			if newPosition.Status.CastlingRights.QueenSide[movement.movingPiece.Color] {
+			if newPosition.castlingRights.queenSide[movement.movingPiece.Color] {
 				if movement.movingPiece.Square.J == 0 {
-					newPosition.Status.CastlingRights.QueenSide[movement.movingPiece.Color] = false
+					newPosition.castlingRights.queenSide[movement.movingPiece.Color] = false
 				}
 			}
-			if newPosition.Status.CastlingRights.KingSide[movement.movingPiece.Color] {
+			if newPosition.castlingRights.kingSide[movement.movingPiece.Color] {
 				if movement.movingPiece.Square.J == 7 {
-					newPosition.Status.CastlingRights.KingSide[movement.movingPiece.Color] = false
+					newPosition.castlingRights.kingSide[movement.movingPiece.Color] = false
 				}
 			}
 		}
 
 		if movement.isTakingPiece {
-			newPosition.Board[movement.takingPiece.Square.I][movement.takingPiece.Square.J].Kind = Kind_None
-			newPosition.Board[movement.takingPiece.Square.I][movement.takingPiece.Square.J].Color = Color_None
+			newPosition.board[movement.takingPiece.Square.I][movement.takingPiece.Square.J].Kind = Kind_None
+			newPosition.board[movement.takingPiece.Square.I][movement.takingPiece.Square.J].Color = Color_None
 
 			if recomputeLegalMovements {
-				newPosition.Captures = append(newPosition.Captures, movement.takingPiece)
+				newPosition.captures = append(newPosition.captures, movement.takingPiece)
 			}
 
 			if movement.takingPiece.Kind == Kind_Rook {
-				if newPosition.Status.CastlingRights.QueenSide[movement.takingPiece.Color] {
+				if newPosition.castlingRights.queenSide[movement.takingPiece.Color] {
 					castlingRow := uint8(7)
 					if movement.takingPiece.Color == Color_Black {
 						castlingRow = 0
 					}
 
 					if movement.takingPiece.Square.I == castlingRow && movement.takingPiece.Square.J == 0 {
-						newPosition.Status.CastlingRights.QueenSide[movement.takingPiece.Color] = false
+						newPosition.castlingRights.queenSide[movement.takingPiece.Color] = false
 					}
 				}
-				if newPosition.Status.CastlingRights.KingSide[movement.takingPiece.Color] {
+				if newPosition.castlingRights.kingSide[movement.takingPiece.Color] {
 					castlingRow := uint8(7)
 					if movement.takingPiece.Color == Color_Black {
 						castlingRow = 0
 					}
 
 					if movement.takingPiece.Square.I == castlingRow && movement.takingPiece.Square.J == 7 {
-						newPosition.Status.CastlingRights.KingSide[movement.takingPiece.Color] = false
+						newPosition.castlingRights.kingSide[movement.takingPiece.Color] = false
 					}
 				}
 			}
 		}
 
-		newPosition.Board[movement.to.I][movement.to.J].Color = movement.movingPiece.Color
+		newPosition.board[movement.toSq.I][movement.toSq.J].Color = movement.movingPiece.Color
 		if movement.pawnPromotionTo == nil {
 			// Update data of the new piece
-			newPosition.Board[movement.to.I][movement.to.J].Kind = movement.movingPiece.Kind
+			newPosition.board[movement.toSq.I][movement.toSq.J].Kind = movement.movingPiece.Kind
 		} else {
 			// Promote the piece
-			newPosition.Board[movement.to.I][movement.to.J].Kind = *movement.pawnPromotionTo
+			newPosition.board[movement.toSq.I][movement.toSq.J].Kind = *movement.pawnPromotionTo
 		}
 
 		// Delete this piece's previous position
-		newPosition.Board[movement.from.I][movement.from.J].Kind = Kind_None
-		newPosition.Board[movement.from.I][movement.from.J].Color = Color_None
+		newPosition.board[movement.fromSq.I][movement.fromSq.J].Kind = Kind_None
+		newPosition.board[movement.fromSq.I][movement.fromSq.J].Color = Color_None
 	}
 
 	// Handle halfmove clock
 	if movement.movingPiece.Kind == Kind_Pawn || movement.isTakingPiece {
-		newPosition.Status.HalfmoveClock = 0
+		newPosition.halfmoveClock = 0
 	} else {
-		newPosition.Status.HalfmoveClock++
+		newPosition.halfmoveClock++
 	}
 
 	// Handle fullmove counter
 	if movement.movingPiece.Color == Color_White {
-		newPosition.Status.PlayerToMove = Color_Black
+		newPosition.playerToMove = Color_Black
 	} else if movement.movingPiece.Color == Color_Black {
-		newPosition.Status.PlayerToMove = Color_White
-		newPosition.Status.FullmoveCounter++
+		newPosition.playerToMove = Color_White
+		newPosition.fullmoveCounter++
 	}
 
 	// Switch positions
@@ -367,11 +365,11 @@ func (g *Game) forceMovement(movement Movement, recomputeLegalMovements bool) {
 		g.ComputeLegalMovements()
 
 		if len(g.computedLegalMovements) == 0 {
-			_, opponentAttackMatrix := g.currentPosition.GetPseudoMovements(g.currentPosition.Status.PlayerToMove.Opposite(), false)
-			isGettingChecked := g.currentPosition.checkForCheck(g.currentPosition.Status.PlayerToMove, &opponentAttackMatrix)
+			_, opponentAttackMatrix := g.currentPosition.computePseudoMovements(g.currentPosition.playerToMove.Opposite(), false)
+			isGettingChecked := g.currentPosition.checkForCheck(g.currentPosition.playerToMove, &opponentAttackMatrix)
 
 			if isGettingChecked {
-				if g.currentPosition.Status.PlayerToMove == Color_White {
+				if g.currentPosition.playerToMove == Color_White {
 					g.Terminate(Outcome_Checkmate_Black)
 				} else {
 					g.Terminate(Outcome_Checkmate_White)
@@ -379,7 +377,7 @@ func (g *Game) forceMovement(movement Movement, recomputeLegalMovements bool) {
 			} else {
 				g.Terminate(Outcome_Draw_Stalemate)
 			}
-		} else if g.currentPosition.Status.HalfmoveClock >= 100 {
+		} else if g.currentPosition.halfmoveClock >= 100 {
 			g.Terminate(Outcome_Draw_50Move)
 		}
 	}
@@ -389,7 +387,7 @@ func (g *Game) Terminate(outcome Outcome) {
 	g.outcome = outcome
 }
 
-func (g *Game) undoMovement() {
+func (g *Game) undoSimulatedMovement() {
 	if len(g.positions) == 0 {
 		fmt.Println("Can't undo more.")
 		return

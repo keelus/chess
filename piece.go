@@ -1,4 +1,4 @@
-package engine
+package chess
 
 type Piece struct {
 	Color Color

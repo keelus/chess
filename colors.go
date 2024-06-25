@@ -1,4 +1,4 @@
-package engine
+package chess
 
 const COLOR_AMOUNT = 2
 

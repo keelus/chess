@@ -1,4 +1,4 @@
-package engine
+package chess
 
 import (
 	"fmt"
@@ -10,14 +10,14 @@ type Movement struct {
 	takingPiece   Piece // Optional
 	isTakingPiece bool
 
-	from Square
-	to   Square
+	fromSq Square
+	toSq   Square
 
 	pawnIsDoubleSquareMovement bool
 	pawnPromotionTo            *Kind
 
-	isKingSideCastling  bool
 	isQueenSideCastling bool
+	isKingSideCastling  bool
 }
 
 func (m *Movement) withPawnPromotion(newKind Kind) *Movement {
@@ -42,27 +42,27 @@ func (m *Movement) withCastling(isQueenSideMove, isKingSideMove bool) *Movement 
 	return m
 }
 
-func newMovement(movingPiece Piece, from, to Square /*, enPassant *Square, canWhiteQueenSideCastling, canWhiteKingSideCastling, canBlackQueenSideCastling, canBlackKingSideCastling bool*/) *Movement {
+func newMovement(movingPiece Piece, fromSquare, toSquare Square) *Movement {
 	return &Movement{
 		movingPiece:   movingPiece,
 		isTakingPiece: false,
-		from:          from,
-		to:            to,
+		fromSq:        fromSquare,
+		toSq:          toSquare,
 	}
 }
 
 func (m Movement) debug() string {
-	return fmt.Sprintf("Piece [color: %c, kind: %c] moves from (%d, %d) to (%d, %d) [takes: %t].", m.movingPiece.Color.ToRune(), m.movingPiece.Kind.ToRune(), m.from.I, m.from.J, m.to.I, m.to.J, m.isTakingPiece)
+	return fmt.Sprintf("Piece [color: %c, kind: %c] moves from (%d, %d) to (%d, %d) [takes: %t].", m.movingPiece.Color.ToRune(), m.movingPiece.Kind.ToRune(), m.fromSq.I, m.fromSq.J, m.toSq.I, m.toSq.J, m.isTakingPiece)
 }
 
 func (m Movement) Algebraic() string {
-	from := m.from
-	to := m.to
+	from := m.fromSq
+	to := m.toSq
 
 	var sb strings.Builder
 
-	sb.WriteString(from.ToAlgebraic())
-	sb.WriteString(to.ToAlgebraic())
+	sb.WriteString(from.Algebraic())
+	sb.WriteString(to.Algebraic())
 
 	if m.pawnPromotionTo != nil {
 		sb.WriteRune((*m.pawnPromotionTo).ToRune())
@@ -71,12 +71,12 @@ func (m Movement) Algebraic() string {
 	return sb.String()
 }
 
-func (m Movement) From() Square {
-	return m.from
+func (m Movement) FromSquare() Square {
+	return m.fromSq
 }
 
-func (m Movement) To() Square {
-	return m.to
+func (m Movement) ToSquare() Square {
+	return m.toSq
 }
 
 func (m Movement) IsCapturing() bool {

@@ -1,4 +1,4 @@
-package engine
+package chess
 
 import (
 	"errors"
@@ -23,8 +23,19 @@ func NewSquare(i, j uint8) (Square, error) {
 	return newSquare(i, j), nil
 }
 
-func (p Square) ToAlgebraic() string {
-	return string([]rune{rune(p.J) + 'a', '8' - rune(p.I)})
+func (s *Square) clone() Square {
+	return Square{
+		s.I,
+		s.J,
+	}
+}
+
+func (s1 Square) IsEqualTo(s2 Square) bool {
+	return s1.I == s2.I && s1.J == s2.J
+}
+
+func (s Square) Algebraic() string {
+	return string([]rune{rune(s.J) + 'a', '8' - rune(s.I)})
 }
 
 func NewSquareFromAlgebraic(algebraic string) (Square, error) {

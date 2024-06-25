@@ -1,4 +1,4 @@
-package engine
+package chess
 
 import (
 	"strconv"
@@ -6,56 +6,79 @@ import (
 )
 
 type Position struct {
-	Board    Board
-	Status   PositionStatus
-	Captures []Piece // Only used via API. Perft ignores this
+	board Board
+
+	playerToMove    Color
+	castlingRights  CastlingRights
+	enPassantSq     *Square
+	halfmoveClock   uint8
+	fullmoveCounter uint
+
+	captures []Piece // Only used via API. Perft ignores this
+}
+
+// Note: enPassantSq is not cloned, as it's not needed
+func (p *Position) clone() Position {
+	return Position{
+		board: p.board,
+
+		playerToMove:    p.playerToMove,
+		castlingRights:  p.castlingRights.clone(),
+		enPassantSq:     nil,
+		halfmoveClock:   p.halfmoveClock,
+		fullmoveCounter: p.fullmoveCounter,
+
+		captures: p.captures,
+	}
 }
 
 type CastlingRights struct {
-	QueenSide map[Color]bool
-	KingSide  map[Color]bool
+	queenSide map[Color]bool
+	kingSide  map[Color]bool
 }
 
 func (cr *CastlingRights) clone() CastlingRights {
 	return CastlingRights{
-		QueenSide: map[Color]bool{
-			Color_White: cr.QueenSide[Color_White],
-			Color_Black: cr.QueenSide[Color_Black],
+		queenSide: map[Color]bool{
+			Color_White: cr.queenSide[Color_White],
+			Color_Black: cr.queenSide[Color_Black],
 		},
-		KingSide: map[Color]bool{
-			Color_White: cr.KingSide[Color_White],
-			Color_Black: cr.KingSide[Color_Black],
+		kingSide: map[Color]bool{
+			Color_White: cr.kingSide[Color_White],
+			Color_Black: cr.kingSide[Color_Black],
 		},
 	}
 }
 
-type PositionStatus struct {
-	PlayerToMove    Color
-	CastlingRights  CastlingRights
-	EnPassant       *Square
-	HalfmoveClock   uint8
-	FullmoveCounter uint
+func (cr CastlingRights) QueenSide(color Color) bool {
+	return cr.queenSide[color]
 }
 
-func (p Position) GetHalfmoveClock() uint8 {
-	return p.Status.HalfmoveClock
-}
-func (p Position) GetFullmoveCounter() uint {
-	return p.Status.FullmoveCounter
+func (cr CastlingRights) KingSide(color Color) bool {
+	return cr.kingSide[color]
 }
 
-func (p Position) GetCaptures() []Piece {
-	return p.Captures
+func (p Position) HalfmoveClock() uint8 {
+	return p.halfmoveClock
+}
+func (p Position) FullmoveCounter() uint {
+	return p.fullmoveCounter
 }
 
-func (ps *PositionStatus) clone() PositionStatus {
-	return PositionStatus{
-		PlayerToMove:    ps.PlayerToMove,
-		CastlingRights:  ps.CastlingRights.clone(),
-		EnPassant:       ps.EnPassant,
-		HalfmoveClock:   ps.HalfmoveClock,
-		FullmoveCounter: ps.FullmoveCounter,
-	}
+func (p Position) Captures() []Piece {
+	return p.captures
+}
+
+func (p Position) CastlingRights() CastlingRights {
+	return p.castlingRights
+}
+
+func (p Position) EnPassantSquare() *Square {
+	return p.enPassantSq
+}
+
+func (p Position) Turn() Color {
+	return p.playerToMove
 }
 
 func newPositionFromFen(fen string) Position {
@@ -65,26 +88,26 @@ func newPositionFromFen(fen string) Position {
 	}
 
 	return Position{
-		Board: newBoardFromFen(parsedFen.PlacementData),
-		Status: PositionStatus{
-			PlayerToMove: parsedFen.ActiveColor,
+		board: newBoardFromFen(parsedFen.PlacementData),
 
-			CastlingRights: CastlingRights{
-				QueenSide: map[Color]bool{
-					Color_White: parsedFen.WhiteCanQueenSideCastling,
-					Color_Black: parsedFen.BlackCanQueenSideCastling,
-				},
-				KingSide: map[Color]bool{
-					Color_White: parsedFen.WhiteCanKingSideCastling,
-					Color_Black: parsedFen.BlackCanKingSideCastling,
-				},
+		playerToMove: parsedFen.ActiveColor,
+
+		castlingRights: CastlingRights{
+			queenSide: map[Color]bool{
+				Color_White: parsedFen.WhiteCanQueenSideCastling,
+				Color_Black: parsedFen.BlackCanQueenSideCastling,
 			},
-
-			EnPassant:       parsedFen.EnPassant,
-			HalfmoveClock:   parsedFen.HalfmoveClock,
-			FullmoveCounter: parsedFen.FulmoveCounter,
+			kingSide: map[Color]bool{
+				Color_White: parsedFen.WhiteCanKingSideCastling,
+				Color_Black: parsedFen.BlackCanKingSideCastling,
+			},
 		},
-		Captures: make([]Piece, 0),
+
+		enPassantSq:     parsedFen.EnPassant,
+		halfmoveClock:   parsedFen.HalfmoveClock,
+		fullmoveCounter: parsedFen.FulmoveCounter,
+
+		captures: make([]Piece, 0),
 	}
 }
 
@@ -93,23 +116,23 @@ func (p Position) Fen() string {
 	var sb strings.Builder
 
 	sb.WriteRune(' ')
-	sb.WriteString(p.Board.Fen())
+	sb.WriteString(p.board.Fen())
 
-	sb.WriteRune(p.Status.PlayerToMove.ToRune())
+	sb.WriteRune(p.playerToMove.ToRune())
 
-	if p.Status.CastlingRights.QueenSide[Color_White] && p.Status.CastlingRights.KingSide[Color_White] && p.Status.CastlingRights.QueenSide[Color_Black] && p.Status.CastlingRights.KingSide[Color_Black] {
+	if p.castlingRights.queenSide[Color_White] && p.castlingRights.kingSide[Color_White] && p.castlingRights.queenSide[Color_Black] && p.castlingRights.kingSide[Color_Black] {
 		sb.WriteRune(' ')
 
-		if p.Status.CastlingRights.KingSide[Color_White] {
+		if p.castlingRights.kingSide[Color_White] {
 			sb.WriteRune('K')
 		}
-		if p.Status.CastlingRights.QueenSide[Color_White] {
+		if p.castlingRights.queenSide[Color_White] {
 			sb.WriteRune('Q')
 		}
-		if p.Status.CastlingRights.KingSide[Color_Black] {
+		if p.castlingRights.kingSide[Color_Black] {
 			sb.WriteRune('k')
 		}
-		if p.Status.CastlingRights.QueenSide[Color_Black] {
+		if p.castlingRights.queenSide[Color_Black] {
 			sb.WriteRune('q')
 		}
 
@@ -118,21 +141,21 @@ func (p Position) Fen() string {
 		sb.WriteString(" - ")
 	}
 
-	if p.Status.EnPassant != nil {
-		sb.WriteString(p.Status.EnPassant.ToAlgebraic())
+	if p.enPassantSq != nil {
+		sb.WriteString(p.enPassantSq.Algebraic())
 	} else {
 		sb.WriteRune('-')
 	}
 
 	sb.WriteRune(' ')
-	sb.WriteString(strconv.Itoa(int(p.Status.HalfmoveClock)))
+	sb.WriteString(strconv.Itoa(int(p.halfmoveClock)))
 	sb.WriteRune(' ')
-	sb.WriteString(strconv.Itoa(int(p.Status.FullmoveCounter)))
+	sb.WriteString(strconv.Itoa(int(p.fullmoveCounter)))
 
 	return sb.String()
 }
 
-func (p Position) GetPseudoMovements(color Color, doCastlingCheck bool) ([]Movement, [8][8]bool) {
+func (p Position) computePseudoMovements(color Color, doCastlingCheck bool) ([]Movement, [8][8]bool) {
 	movements := make([]Movement, 0, 256)
 	var attackMatrix [8][8]bool
 	for i := 0; i < 8; i++ {
@@ -141,10 +164,10 @@ func (p Position) GetPseudoMovements(color Color, doCastlingCheck bool) ([]Movem
 		}
 	}
 
-	for _, row := range p.Board {
+	for _, row := range p.board {
 		for _, piece := range row {
 			if piece.Color == color {
-				p.GetPiecePseudoMovements(piece, &movements, doCastlingCheck, &attackMatrix)
+				p.computePiecePseudoMovements(piece, &movements, doCastlingCheck, &attackMatrix)
 			}
 		}
 	}
@@ -152,17 +175,17 @@ func (p Position) GetPseudoMovements(color Color, doCastlingCheck bool) ([]Movem
 	return movements, attackMatrix
 }
 
-func (p Position) GetPiecePseudoMovements(piece Piece, movements *[]Movement, doCastlingCheck bool, attackMatrix *[8][8]bool) {
+func (p Position) computePiecePseudoMovements(piece Piece, movements *[]Movement, doCastlingCheck bool, attackMatrix *[8][8]bool) {
 	switch piece.Kind {
 	case Kind_Bishop:
-		p.getDirectionPseudoMovements(piece, movements, attackMatrix, bishopDirections)
+		p.computeDirectionPseudoMovements(piece, movements, attackMatrix, bishopDirections)
 		return
 	case Kind_Rook:
-		p.getDirectionPseudoMovements(piece, movements, attackMatrix, rookDirections)
+		p.computeDirectionPseudoMovements(piece, movements, attackMatrix, rookDirections)
 		return
 	case Kind_Queen:
-		p.getDirectionPseudoMovements(piece, movements, attackMatrix, bishopDirections)
-		p.getDirectionPseudoMovements(piece, movements, attackMatrix, rookDirections)
+		p.computeDirectionPseudoMovements(piece, movements, attackMatrix, bishopDirections)
+		p.computeDirectionPseudoMovements(piece, movements, attackMatrix, rookDirections)
 		return
 	case Kind_King:
 		for _, offset := range kingOffsets {
@@ -170,7 +193,7 @@ func (p Position) GetPiecePseudoMovements(piece Piece, movements *[]Movement, do
 			if targetRow >= 0 && targetCol >= 0 && targetRow < 8 && targetCol < 8 {
 				row := uint8(targetRow)
 				col := uint8(targetCol)
-				pieceAt := p.Board[row][col]
+				pieceAt := p.board[row][col]
 
 				if pieceAt.Kind == Kind_None {
 					attackMatrix[row][col] = true
@@ -197,14 +220,14 @@ func (p Position) GetPiecePseudoMovements(piece Piece, movements *[]Movement, do
 				castlingRow = 0
 			}
 
-			_, enemyAttackBoard := p.GetPseudoMovements(piece.Color.Opposite(), false)
+			_, enemyAttackBoard := p.computePseudoMovements(piece.Color.Opposite(), false)
 			// If king is not in check, continue
 			if enemyAttackBoard[piece.Square.I][piece.Square.J] == false {
-				if p.Status.CastlingRights.QueenSide[piece.Color] {
+				if p.castlingRights.queenSide[piece.Color] {
 					// Check if space to rook is empty
 					canCastle := true
 					for j := piece.Square.J - 1; j >= piece.Square.J-3; j-- {
-						if p.Board[piece.Square.I][j].Kind != Kind_None {
+						if p.board[piece.Square.I][j].Kind != Kind_None {
 							canCastle = false
 							break
 						}
@@ -224,11 +247,11 @@ func (p Position) GetPiecePseudoMovements(piece Piece, movements *[]Movement, do
 					}
 				}
 
-				if p.Status.CastlingRights.KingSide[piece.Color] {
+				if p.castlingRights.kingSide[piece.Color] {
 					// Check if space to rook is empty
 					canCastle := true
 					for j := piece.Square.J + 1; j < 7; j++ {
-						if p.Board[piece.Square.I][j].Kind != Kind_None {
+						if p.board[piece.Square.I][j].Kind != Kind_None {
 							canCastle = false
 							break
 						}
@@ -260,7 +283,7 @@ func (p Position) GetPiecePseudoMovements(piece Piece, movements *[]Movement, do
 				row := uint8(targetRow)
 				col := uint8(targetCol)
 
-				pieceAt := p.Board[row][col]
+				pieceAt := p.board[row][col]
 
 				if pieceAt.Kind == Kind_None {
 					attackMatrix[row][col] = true
@@ -298,7 +321,7 @@ func (p Position) GetPiecePseudoMovements(piece Piece, movements *[]Movement, do
 			targetRow := int8(piece.Square.I) + pawnMoveRowDirections[piece.Color]*i
 			if targetRow >= 0 && targetRow < 8 {
 				row := uint8(targetRow)
-				pieceAt := p.Board[row][piece.Square.J]
+				pieceAt := p.board[row][piece.Square.J]
 				if pieceAt.Kind != Kind_None {
 					break
 				}
@@ -330,7 +353,7 @@ func (p Position) GetPiecePseudoMovements(piece Piece, movements *[]Movement, do
 				row := uint8(targetRow)
 				col := uint8(targetCol)
 
-				pieceAt := p.Board[row][col]
+				pieceAt := p.board[row][col]
 
 				if pieceAt.Kind != Kind_None && pieceAt.Color != piece.Color {
 					if row == pawnPromotionRows[piece.Color] {
@@ -356,13 +379,13 @@ func (p Position) GetPiecePseudoMovements(piece Piece, movements *[]Movement, do
 				}
 
 				// En passant available check in current diagonal
-				if pieceAt.Kind == Kind_None && p.Status.EnPassant != nil && p.Status.EnPassant.I == row && p.Status.EnPassant.J == col {
-					enPassantPieceSquare := newSquare(p.Status.EnPassant.I+1, p.Status.EnPassant.J)
+				if pieceAt.Kind == Kind_None && p.enPassantSq != nil && p.enPassantSq.I == row && p.enPassantSq.J == col {
+					enPassantPieceSquare := newSquare(p.enPassantSq.I+1, p.enPassantSq.J)
 					if piece.Color == Color_Black {
-						enPassantPieceSquare.I = p.Status.EnPassant.I - 1
+						enPassantPieceSquare.I = p.enPassantSq.I - 1
 					}
 
-					pieceAt := p.Board[enPassantPieceSquare.I][enPassantPieceSquare.J]
+					pieceAt := p.board[enPassantPieceSquare.I][enPassantPieceSquare.J]
 
 					attackMatrix[row][col] = true
 					*movements = append(*movements,
@@ -378,7 +401,7 @@ func (p Position) GetPiecePseudoMovements(piece Piece, movements *[]Movement, do
 	}
 }
 
-func (p Position) getDirectionPseudoMovements(piece Piece, movements *[]Movement, attackMatrix *[8][8]bool, directions [4][2]int8) {
+func (p Position) computeDirectionPseudoMovements(piece Piece, movements *[]Movement, attackMatrix *[8][8]bool, directions [4][2]int8) {
 	for _, dir := range directions {
 		i := int8(piece.Square.I) + dir[0]
 		j := int8(piece.Square.J) + dir[1]
@@ -387,7 +410,7 @@ func (p Position) getDirectionPseudoMovements(piece Piece, movements *[]Movement
 			row := uint8(i)
 			col := uint8(j)
 
-			pieceAt := p.Board[row][col]
+			pieceAt := p.board[row][col]
 
 			if pieceAt.Kind == Kind_None {
 				attackMatrix[row][col] = true
@@ -417,11 +440,11 @@ func (p Position) getDirectionPseudoMovements(piece Piece, movements *[]Movement
 	return
 }
 
-// TODO: Save king's positions (in Position{}, or get them at GetPseudoMovements() to reuse the loop, if possible)
+// TODO: Save king's positions (in Position{}, or get them at computePseudoMovements() to reuse the loop, if possible)
 func (p Position) checkForCheck(allyColor Color, opponentAttackMatrix *[8][8]bool) bool {
 	for i := uint8(0); i < 8; i++ {
 		for j := uint8(0); j < 8; j++ {
-			if p.Board[i][j].Kind == Kind_King && p.Board[i][j].Color == allyColor {
+			if p.board[i][j].Kind == Kind_King && p.board[i][j].Color == allyColor {
 				return opponentAttackMatrix[i][j]
 			}
 		}

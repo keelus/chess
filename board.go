@@ -1,4 +1,4 @@
-package engine
+package chess
 
 import (
 	"strconv"
@@ -7,6 +7,40 @@ import (
 )
 
 type Board [8][8]Piece
+
+func (b *Board) Fen() string {
+	var sb strings.Builder
+	spaceAccum := 0
+
+	for i := 0; i < 8; i++ {
+		for j := 0; j < 8; j++ {
+			if b[i][j].Kind == Kind_None {
+				spaceAccum++
+			} else {
+				if spaceAccum > 0 {
+					sb.WriteString(strconv.Itoa(spaceAccum))
+					spaceAccum = 0
+				}
+				kindRune := b[i][j].Kind.ToRune()
+				if b[i][j].Color == Color_White {
+					kindRune = unicode.ToUpper(kindRune)
+				}
+				sb.WriteRune(kindRune)
+			}
+		}
+
+		if spaceAccum > 0 {
+			sb.WriteString(strconv.Itoa(spaceAccum))
+			spaceAccum = 0
+		}
+
+		if i != 7 {
+			sb.WriteRune('/')
+		}
+	}
+
+	return sb.String()
+}
 
 func newBoardEmpty() Board {
 	var board Board
@@ -51,38 +85,4 @@ func newBoardFromFen(placementFenData [8]string) Board {
 
 func (b *Board) createPieceAt(color Color, kind Kind, i, j uint8) {
 	b[i][j] = newPiece(color, kind, newSquare(i, j))
-}
-
-func (b *Board) Fen() string {
-	var sb strings.Builder
-	spaceAccum := 0
-
-	for i := 0; i < 8; i++ {
-		for j := 0; j < 8; j++ {
-			if b[i][j].Kind == Kind_None {
-				spaceAccum++
-			} else {
-				if spaceAccum > 0 {
-					sb.WriteString(strconv.Itoa(spaceAccum))
-					spaceAccum = 0
-				}
-				kindRune := b[i][j].Kind.ToRune()
-				if b[i][j].Color == Color_White {
-					kindRune = unicode.ToUpper(kindRune)
-				}
-				sb.WriteRune(kindRune)
-			}
-		}
-
-		if spaceAccum > 0 {
-			sb.WriteString(strconv.Itoa(spaceAccum))
-			spaceAccum = 0
-		}
-
-		if i != 7 {
-			sb.WriteRune('/')
-		}
-	}
-
-	return sb.String()
 }
