@@ -2,20 +2,20 @@ package chess
 
 import (
 	"errors"
-	"fmt"
 )
 
 // Game represents a Chess Game.
 type Game struct {
-	positions       []Position
-	currentPosition Position
+	positions            []Position
+	currentPosition      Position
+	currentPositionIndex int
 
 	computedLegalMovements []Movement
 
 	outcome Outcome // Not used by Perft.
 
-	positionMap     map[string]int // Not used by Perft (ignores Threefold).
-	movementHistory []Movement     // Not used by Perft.
+	positionMap     map[string]uint8 // Not used by Perft (ignores Threefold).
+	movementHistory []Movement       // Not used by Perft.
 }
 
 // NewGame creates and returns an new Game instance, based on the provided FEN string.
@@ -35,10 +35,11 @@ func NewGame(fen string) (Game, error) {
 	}
 
 	newGame := Game{
-		positions:       make([]Position, 0),
-		currentPosition: startingPosition,
+		positions:            make([]Position, 0),
+		currentPosition:      startingPosition,
+		currentPositionIndex: 0,
 
-		positionMap: make(map[string]int),
+		positionMap: make(map[string]uint8),
 
 		outcome: Outcome_None,
 	}
@@ -46,6 +47,12 @@ func NewGame(fen string) (Game, error) {
 	newGame.computeLegalMovements()
 
 	return newGame, nil
+}
+
+// Turn returns the player/side to move's color of the current
+// game position.
+func (g Game) Turn() Color {
+	return g.currentPosition.playerToMove
 }
 
 // PieceAtSquareAlgebraic returns a copy of the Piece placed in the
@@ -58,12 +65,7 @@ func NewGame(fen string) (Game, error) {
 //	PieceAtSquareAlgebraic("d2") // returns Piece{...}, nil
 //	PieceAtSquareAlgebraic("aa") // returns Piece{}, error
 func (g *Game) PieceAtSquareAlgebraic(algebraic string) (Piece, error) {
-	square, err := NewSquareFromAlgebraic(algebraic)
-	if err != nil {
-		return Piece{}, err
-	}
-
-	return g.PieceAtSquare(square), nil
+	return g.currentPosition.board.PieceAtSquareAlgebraic(algebraic)
 }
 
 // PieceAtSquare returns a copy of the Piece placed in the
@@ -75,10 +77,13 @@ func (g *Game) PieceAtSquare(square Square) Piece {
 	return g.currentPosition.board[square.I][square.J]
 }
 
-// Turn returns the player/side to move's color of the current
-// game position.
-func (g Game) Turn() Color {
-	return g.currentPosition.playerToMove
+// CurrentPositionIndex returns the game's current position's
+// index.
+//
+// You can use this function along with game.PositionAtIndex(i)
+// to get any position in the game.
+func (g Game) CurrentPositionIndex() int {
+	return g.currentPositionIndex
 }
 
 // LegalMovements returns a slice of legal movements of the
@@ -190,12 +195,13 @@ func (g *Game) MakeMovementAlgebraic(algebraicMovement string) error {
 	for _, legalMovement := range g.computedLegalMovements {
 		if legalMovement.Algebraic() == algebraicMovement {
 			g.movementHistory = append(g.movementHistory, legalMovement)
+			g.currentPositionIndex++
 			g.forceMovement(legalMovement, true)
 			return nil
 		}
 	}
 
-	return errors.New("That movement is not allowed.")
+	return errors.New("That movement is not allowed or is invalid.")
 }
 
 // StartingFen returns the Forsyth–Edwards Notation of the game's
@@ -225,11 +231,16 @@ func (g *Game) CurrentPosition() Position {
 //
 // If the index is invalid, it will return an empty Position and an error.
 func (g *Game) PositionAtIndex(index int) (Position, error) {
-	if index >= 0 && index < len(g.positions) {
-		return g.positions[index], nil
+	// If wants last position, return current, as is not yet pushed
+	if index == g.currentPositionIndex {
+		return g.currentPosition, nil
 	}
 
-	return Position{}, errors.New("That index is invalid or out of bounds.")
+	if index >= len(g.positions) {
+		return Position{}, errors.New("That index is invalid or out of range.")
+	}
+
+	return g.positions[index], nil
 }
 
 // MovementHistory returns a slice of Movements made in the game,
@@ -246,13 +257,12 @@ type Outcome string
 
 const (
 	Outcome_None            Outcome = "None"
-	Outcome_Checkmate_White         = "Checkmate_White"
-	Outcome_Checkmate_Black         = "Checkmate_Black"
+	Outcome_Checkmate_White         = "Checkmate: White wins"
+	Outcome_Checkmate_Black         = "Checkmate: Black wins"
 
-	Outcome_Draw_Stalemate = "Stalemate"
-	//Outcome_Draw_InsufficientMaterial = "Insufficient material"
-	Outcome_Draw_50Move = "Fifty move rule"
-	Outcome_Draw_3Rep   = "Threefold repetition"
+	Outcome_Draw_Stalemate = "Draw: Stalemate"
+	Outcome_Draw_50Move    = "Draw: Fifty move rule"
+	Outcome_Draw_3Rep      = "Draw: Threefold repetition"
 )
 
 // Outcome returns's the game's outcome.
@@ -277,7 +287,6 @@ func (g *Game) filterPseudoMovements(movements *[]Movement) []Movement {
 	opponentColor := g.currentPosition.playerToMove.Opposite()
 
 	for _, myMovement := range *movements {
-		// TODO: DO a simulateMovement
 		g.simulateMovement(myMovement)
 		_, opponentAttackMatrix := g.currentPosition.computePseudoMovements(opponentColor, false)
 
@@ -454,12 +463,7 @@ func (g *Game) forceMovement(movement Movement, recomputeLegalMovements bool) {
 			g.positionMap[g.currentPosition.Fen()] = 1
 		} else {
 			g.positionMap[g.currentPosition.Fen()]++
-			//fmt.Println(g.positionMap[g.currentPosition.Fen()])
-			// if recomputeLegalMovements {
-			// 	fmt.Printf("%s has %d\n", g.currentPosition.Fen(), g.positionMap[g.currentPosition.Fen()])
-			// }
 			if g.positionMap[g.currentPosition.Fen()] == 3 {
-				//fmt.Printf("%s ends with %d\n", g.currentPosition.Fen(), g.positionMap[g.currentPosition.Fen()])
 				g.Terminate(Outcome_Draw_3Rep)
 			}
 		}
@@ -491,11 +495,10 @@ func (g *Game) forceMovement(movement Movement, recomputeLegalMovements bool) {
 }
 
 func (g *Game) undoSimulatedMovement() {
-	if len(g.positions) == 0 {
-		fmt.Println("Can't undo more.")
-		return
-	} else {
+	if len(g.positions) > 0 {
 		g.currentPosition = g.positions[len(g.positions)-1]
 		g.positions = g.positions[:len(g.positions)-1]
+	} else {
+		panic("Cannot undo more. Game has no more positions.")
 	}
 }

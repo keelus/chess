@@ -44,29 +44,58 @@ var pawnStartingRows = map[Color]uint8{
 
 var promotableKinds = [4]Kind{Kind_Queen, Kind_Rook, Kind_Bishop, Kind_Knight}
 
-// ToRune returns the rune of the piece kind, in lowercase.
+// Rune returns the rune of the piece kind, in lowercase.
 //
 // Examples:
-//   Kind_None.ToRune()  // returns '_'
-//   Kind_Queen.ToRune() // returns 'q'
-//   Kind_Knight.ToRune() // returns 'n'
-func (k Kind) ToRune() rune {
+//   Kind_None.Rune()  // returns '_'
+//   Kind_Queen.Rune() // returns 'q'
+//   Kind_Knight.Rune() // returns 'n'
+func (k Kind) Rune() rune {
 	return []rune{'_', 'k', 'q', 'r', 'b', 'n', 'p'}[k]
 }
 
-// ToRuneWith returns the rune of the piece kind, with proper case
+// String returns the string/word of the piece kind.
+//
+// Examples:
+//   Kind_None.String()  // returns 'none'
+//   Kind_King.String() // returns 'king'
+//   Kind_Pawn.String() // returns 'pawn'
+func (k Kind) String() string {
+	return [7]string{"none", "king", "queen", "rook", "bishop", "knight", "pawn"}[k]
+}
+
+// UnicodeWithColor returns the unicode rune of the piece kind, colored
+// with the passed color.
+//
+// Examples:
+//   Kind_None.Rune(Color_None)  // returns '_'
+//   Kind_Queen.Rune(Color_White) // returns '♕'
+//   Kind_Queen.Rune(Color_Black) // returns '♛'
+func (k Kind) UnicodeWithColor(color Color) rune {
+	if k == Kind_None || color == Color_None {
+		return '\u2022'
+	}
+
+	if color == Color_White {
+		return rune('\u2654' + int(k-1))
+	} else {
+		return rune('\u265A' + int(k-1))
+	}
+}
+
+// RuneWith returns the rune of the piece kind, with proper case
 // depending on the passed color.
 //
 // Examples:
-//   Kind_None.ToRune(Color_None)  // returns '_'
-//   Kind_Queen.ToRune(Color_White) // returns 'Q'
-//   Kind_Queen.ToRune(Color_Black) // returns 'q'
-func (k Kind) ToRuneWithColor(color Color) rune {
+//   Kind_None.Rune(Color_None)  // returns '_'
+//   Kind_Queen.Rune(Color_White) // returns 'Q'
+//   Kind_Queen.Rune(Color_Black) // returns 'q'
+func (k Kind) RuneWithColor(color Color) rune {
 	if k == Kind_None || color == Color_None {
 		return '_'
 	}
 
-	r := []rune{'k', 'q', 'r', 'b', 'n', 'p'}[k+1]
+	r := []rune{'k', 'q', 'r', 'b', 'n', 'p'}[k-1]
 
 	if color == Color_White {
 		return unicode.ToUpper(r)

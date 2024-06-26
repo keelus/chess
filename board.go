@@ -14,6 +14,36 @@ import (
 // be (0, 0) by default.
 type Board [8][8]Piece
 
+// PieceAtSquare returns a copy of the Piece placed in the
+// board.
+//
+// If there is no piece at that position, it's Kind and Color
+// will be none (Kind_None and Color_None).
+//
+// Note: It assumes that the square is correct. If you create a Square
+// instance without the NewSquare, make sure it's valid.
+func (b Board) PieceAtSquare(square Square) Piece {
+	return b[square.I][square.J]
+}
+
+// PieceAtSquareAlgebraic returns a copy of the Piece placed in the
+// board.
+//
+// If the algebraic position is invalid, it will return an empty Piece and it's error.
+//
+// Examples:
+//
+//	PieceAtSquareAlgebraic("d2") // returns Piece{Kind:Kind_Pawn, Color:Color_White, ...}, nil
+//	PieceAtSquareAlgebraic("aa") // returns Piece{}, error
+func (b Board) PieceAtSquareAlgebraic(algebraic string) (Piece, error) {
+	square, err := NewSquareFromAlgebraic(algebraic)
+	if err != nil {
+		return Piece{}, err
+	}
+
+	return b.PieceAtSquare(square), nil
+}
+
 // Fen returns a string of the board's piece placement
 // in Forsyth–Edwards Notation.
 //
@@ -37,7 +67,7 @@ func (b *Board) Fen() string {
 					sb.WriteString(strconv.Itoa(spaceAccum))
 					spaceAccum = 0
 				}
-				kindRune := b[i][j].Kind.ToRune()
+				kindRune := b[i][j].Kind.Rune()
 				if b[i][j].Color == Color_White {
 					kindRune = unicode.ToUpper(kindRune)
 				}
@@ -56,6 +86,20 @@ func (b *Board) Fen() string {
 	}
 
 	return sb.String()
+}
+
+// Unicode returns the unicode representation of the board, with
+// ranks, files and pieces.
+func (b Board) Unicode() string {
+	s := ""
+	for i := 0; i < 8; i++ {
+		s += strconv.Itoa(i) + " "
+		for j := 0; j < 8; j++ {
+			s += string([]rune{b[i][j].Unicode(), ' '})
+		}
+		s += "\n"
+	}
+	return s + "  a b c d e f g h"
 }
 
 func newBoardEmpty() Board {

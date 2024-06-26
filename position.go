@@ -101,7 +101,7 @@ func (p Position) HasActiveEnPassant() bool {
 // return an empty Square and the error.
 func (p Position) EnPassantSquare() (Square, error) {
 	if p.enPassantSq == nil {
-		return Square{}, errors.New("There is no en passant in the current position.")
+		return Square{}, errors.New("The current position does not have an active en passant.")
 	}
 	return *p.enPassantSq, nil
 }
@@ -109,6 +109,11 @@ func (p Position) EnPassantSquare() (Square, error) {
 // Turn returns the position's player/side to move.
 func (p Position) Turn() Color {
 	return p.playerToMove
+}
+
+// Board returns the position's board.
+func (p Position) Board() Board {
+	return p.board
 }
 
 // Fen returns the position's Forsyth–Edwards Notation, as an string, containing
@@ -121,10 +126,10 @@ func (p Position) Turn() Color {
 func (p Position) Fen() string {
 	var sb strings.Builder
 
-	sb.WriteRune(' ')
 	sb.WriteString(p.board.Fen())
+	sb.WriteRune(' ')
 
-	sb.WriteRune(p.playerToMove.ToRune())
+	sb.WriteRune(p.playerToMove.Rune())
 
 	if p.castlingRights.queenSide[Color_White] && p.castlingRights.kingSide[Color_White] && p.castlingRights.queenSide[Color_Black] && p.castlingRights.kingSide[Color_Black] {
 		sb.WriteRune(' ')

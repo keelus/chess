@@ -12,14 +12,22 @@ const (
 	Color_Black              // Black color
 )
 
-// ToRune returns the rune of the color.
+// Rune returns the rune of the color.
 //
 // Examples:
-//   Color_None.ToRune()  // returns '_'
-//   Color_White.ToRune() // returns 'w'
-//   Color_Black.ToRune() // returns 'b'
-func (c Color) ToRune() rune {
-	return []rune{'_', 'w', 'b'}[c]
+//   Color_None.Rune()  // returns '_'
+//   Color_White.Rune() // returns 'w'
+func (c Color) Rune() rune {
+	return [3]rune{'_', 'w', 'b'}[c]
+}
+
+// String returns the string/word of the color.
+//
+// Examples:
+//   Color_None.String()  // returns 'none'
+//   Color_White.String() // returns 'white'
+func (c Color) String() string {
+	return [3]string{"none", "white", "black"}[c]
 }
 
 // ColorFromRune returns the Color type of the rune passed.

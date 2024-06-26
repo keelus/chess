@@ -68,7 +68,7 @@ func (m Movement) Algebraic() string {
 	sb.WriteString(to.Algebraic())
 
 	if m.pawnPromotionTo != nil {
-		sb.WriteRune((*m.pawnPromotionTo).ToRune())
+		sb.WriteRune((*m.pawnPromotionTo).Rune())
 	}
 
 	return sb.String()
@@ -102,7 +102,7 @@ func (m Movement) IsTakingPiece() bool {
 // If the movement does not take a piece, it will return an empty Piece and the error.
 func (m Movement) TakingPiece() (Piece, error) {
 	if !m.isTakingPiece {
-		return Piece{}, errors.New("This movement is not taking any piece.")
+		return Piece{}, errors.New("This movement does not take any piece.")
 	}
 	return m.takingPiece, nil
 }

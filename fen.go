@@ -34,8 +34,8 @@ func parseFen(fen string) (fenData, error) {
 		return fenData{}, errors.New("The provided FEN does not have 6 parts.")
 	}
 
-	lacementParts := strings.Split(parts[0], "/")
-	if len(lacementParts) != 8 {
+	placementParts := strings.Split(parts[0], "/")
+	if len(placementParts) != 8 {
 		return fenData{}, errors.New("The provided FEN does not have 8 placement positions in part 1.")
 	}
 
@@ -69,7 +69,7 @@ func parseFen(fen string) (fenData, error) {
 	if parts[3] != "-" {
 		square, err := NewSquareFromAlgebraic(parts[3])
 		if err != nil {
-			return fenData{}, errors.New("The provided FEN does not have a valid en passant. It must be in algebraic (e.g: d6).")
+			return fenData{}, errors.New("The provided FEN does not have a valid en passant. It must be in algebraic (e.g: d6) or empty: -.")
 		}
 
 		enPassant = &square
@@ -77,7 +77,7 @@ func parseFen(fen string) (fenData, error) {
 
 	halfmoveClock, err := strconv.ParseUint(parts[4], 10, 0)
 	if err != nil {
-		return fenData{}, errors.New("The provided FEN does not have a valid halfmove number.")
+		return fenData{}, errors.New("The provided FEN does not have a valid halfmove clock number.")
 	}
 
 	fullmoveCounter, err := strconv.ParseUint(parts[5], 10, 0)
@@ -86,7 +86,7 @@ func parseFen(fen string) (fenData, error) {
 	}
 
 	return fenData{
-		placementData:  [8]string(lacementParts),
+		placementData:  [8]string(placementParts),
 		activeColor:    ColorFromRune(activeColor),
 		enPassantSq:    enPassant,
 		halfmoveClock:  uint8(halfmoveClock),

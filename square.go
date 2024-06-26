@@ -22,7 +22,7 @@ func newSquare(i, j uint8) Square {
 // Coordinates should be in range of [0, 8)
 func NewSquare(i, j uint8) (Square, error) {
 	if i > 7 || j > 7 {
-		return Square{}, errors.New("Error creating square.")
+		return Square{}, errors.New("Row or column out of range. They must be in [0, 7).")
 	}
 
 	return newSquare(i, j), nil
