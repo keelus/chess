@@ -303,9 +303,15 @@ func (g *Game) filterPseudoMovements(movements *[]Movement) []Movement {
 }
 
 func (g *Game) computeLegalMovements() {
+	// Compute pseudo movements & filter illegal movements
 	pseudoMovements, _ := g.currentPosition.computePseudoMovements(g.currentPosition.playerToMove, true)
 	legalMovements := g.filterPseudoMovements(&pseudoMovements)
 	g.computedLegalMovements = legalMovements
+
+	// Then, set current position isChecked if current turn is under check
+	_, opponentAttackMatrix := g.currentPosition.computePseudoMovements(g.currentPosition.playerToMove.Opposite(), false)
+	isChecked := g.currentPosition.checkForCheck(g.currentPosition.playerToMove, &opponentAttackMatrix)
+	g.currentPosition.isChecked = isChecked
 }
 
 // Used by perft

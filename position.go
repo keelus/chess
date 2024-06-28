@@ -16,6 +16,7 @@ type Position struct {
 	enPassantSq     *Square
 	halfmoveClock   uint8
 	fullmoveCounter uint
+	isChecked       bool
 
 	captures []Piece // Only used via API. Perft ignores this.
 }
@@ -30,6 +31,7 @@ func (p *Position) clone() Position {
 		enPassantSq:     nil,
 		halfmoveClock:   p.halfmoveClock,
 		fullmoveCounter: p.fullmoveCounter,
+		isChecked:       false,
 
 		captures: p.captures,
 	}
@@ -114,6 +116,12 @@ func (p Position) Turn() Color {
 // Board returns the position's board.
 func (p Position) Board() Board {
 	return p.board
+}
+
+// IsChecked reports whether the current position's turn is
+// under check or not.
+func (p Position) IsChecked() bool {
+	return p.isChecked
 }
 
 // Fen returns the position's Forsyth–Edwards Notation, as an string, containing
